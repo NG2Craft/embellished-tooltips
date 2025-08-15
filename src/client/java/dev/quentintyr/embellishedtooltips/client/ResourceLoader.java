@@ -1,17 +1,17 @@
-package com.obscuria.tooltips.client;
+package dev.quentintyr.embellishedtooltips.client;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.obscuria.tooltips.ObscureTooltips;
-import com.obscuria.tooltips.client.renderer.TooltipRenderer;
-import com.obscuria.tooltips.client.style.StyleFilter;
-import com.obscuria.tooltips.client.style.TooltipStylePreset;
-import com.obscuria.tooltips.client.style.effect.TooltipEffect;
-import com.obscuria.tooltips.client.style.frame.TooltipFrame;
-import com.obscuria.tooltips.client.style.icon.TooltipIcon;
-import com.obscuria.tooltips.client.style.panel.TooltipPanel;
-import com.obscuria.tooltips.registry.TooltipsRegistry;
+import dev.quentintyr.embellishedtooltips.EmbellishedTooltips;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipRenderer;
+import dev.quentintyr.embellishedtooltips.client.style.StyleFilter;
+import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
+import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
+import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
+import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
+import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
+import dev.quentintyr.embellishedtooltips.registry.TooltipsRegistry;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -55,40 +55,40 @@ public final class ResourceLoader implements ResourceManagerReloadListener {
 
       ResourceLocation key;
       Pair preset;
-      while(var2.hasNext()) {
-         key = (ResourceLocation)var2.next();
-         preset = (Pair)STYLES.get(key);
-         if (((StyleFilter)preset.getA()).test(stack)) {
-            Optional var10000 = ((TooltipStylePreset)preset.getB()).getPanel();
+      while (var2.hasNext()) {
+         key = (ResourceLocation) var2.next();
+         preset = (Pair) STYLES.get(key);
+         if (((StyleFilter) preset.getA()).test(stack)) {
+            Optional var10000 = ((TooltipStylePreset) preset.getB()).getPanel();
             Objects.requireNonNull(builder);
             var10000.ifPresent(builder::withPanel);
-            var10000 = ((TooltipStylePreset)preset.getB()).getFrame();
+            var10000 = ((TooltipStylePreset) preset.getB()).getFrame();
             Objects.requireNonNull(builder);
             var10000.ifPresent(builder::withFrame);
-            var10000 = ((TooltipStylePreset)preset.getB()).getIcon();
+            var10000 = ((TooltipStylePreset) preset.getB()).getIcon();
             Objects.requireNonNull(builder);
             var10000.ifPresent(builder::withIcon);
-            builder.withEffects(((TooltipStylePreset)preset.getB()).getEffects());
+            builder.withEffects(((TooltipStylePreset) preset.getB()).getEffects());
             break;
          }
       }
 
       var2 = PRESETS_KEYS.iterator();
 
-      while(var2.hasNext()) {
-         key = (ResourceLocation)var2.next();
-         preset = (Pair)PRESETS.get(key);
-         if (((StyleFilter)preset.getA()).test(stack)) {
-            ((TooltipStylePreset)preset.getB()).getPanel().ifPresent((panel) -> {
+      while (var2.hasNext()) {
+         key = (ResourceLocation) var2.next();
+         preset = (Pair) PRESETS.get(key);
+         if (((StyleFilter) preset.getA()).test(stack)) {
+            ((TooltipStylePreset) preset.getB()).getPanel().ifPresent((panel) -> {
                builder.withPanel(panel, false);
             });
-            ((TooltipStylePreset)preset.getB()).getFrame().ifPresent((frame) -> {
+            ((TooltipStylePreset) preset.getB()).getFrame().ifPresent((frame) -> {
                builder.withFrame(frame, false);
             });
-            ((TooltipStylePreset)preset.getB()).getIcon().ifPresent((icon) -> {
+            ((TooltipStylePreset) preset.getB()).getIcon().ifPresent((icon) -> {
                builder.withIcon(icon, false);
             });
-            builder.withEffects(((TooltipStylePreset)preset.getB()).getEffects());
+            builder.withEffects(((TooltipStylePreset) preset.getB()).getEffects());
          }
       }
 
@@ -101,8 +101,8 @@ public final class ResourceLoader implements ResourceManagerReloadListener {
       manager.m_7536_().forEach((pack) -> {
          Iterator var2 = pack.m_5698_(PackType.CLIENT_RESOURCES).iterator();
 
-         while(var2.hasNext()) {
-            String namespace = (String)var2.next();
+         while (var2.hasNext()) {
+            String namespace = (String) var2.next();
             this.loadElements(pack, namespace, "tooltips/panels", PANELS, TooltipsRegistry::buildPanel);
             this.loadElements(pack, namespace, "tooltips/frames", FRAMES, TooltipsRegistry::buildFrame);
             this.loadElements(pack, namespace, "tooltips/icons", ICONS, TooltipsRegistry::buildIcon);
@@ -113,7 +113,8 @@ public final class ResourceLoader implements ResourceManagerReloadListener {
 
       });
       this.sort();
-      ObscureTooltips.LOGGER.debug(LOADER, "Loaded {} Elements, {} Presets and {} Styles", PANELS.size() + FRAMES.size() + ICONS.size() + EFFECTS.size(), PRESETS.size(), STYLES.size());
+      ObscureTooltips.LOGGER.debug(LOADER, "Loaded {} Elements, {} Presets and {} Styles",
+            PANELS.size() + FRAMES.size() + ICONS.size() + EFFECTS.size(), PRESETS.size(), STYLES.size());
    }
 
    private void clear() {
@@ -129,25 +130,32 @@ public final class ResourceLoader implements ResourceManagerReloadListener {
 
    private void sort() {
       List<ResourceLocation> presets = PRESETS_KEYS.stream().sorted(Comparator.comparingInt((key) -> {
-         return ((StyleFilter)((Pair)PRESETS.get(key)).getA()).priority;
+         return ((StyleFilter) ((Pair) PRESETS.get(key)).getA()).priority;
       })).toList();
       PRESETS_KEYS.clear();
       PRESETS_KEYS.addAll(Lists.reverse(presets));
       List<ResourceLocation> styles = STYLES_KEYS.stream().sorted(Comparator.comparingInt((key) -> {
-         return ((StyleFilter)((Pair)STYLES.get(key)).getA()).priority;
+         return ((StyleFilter) ((Pair) STYLES.get(key)).getA()).priority;
       })).toList();
       STYLES_KEYS.clear();
       STYLES_KEYS.addAll(Lists.reverse(styles));
    }
 
-   private <T> void loadElements(PackResources pack, String namespace, String path, HashMap<ResourceLocation, T> registry, BiFunction<ResourceLocation, JsonObject, Optional<T>> builder) {
+   private <T> void loadElements(PackResources pack, String namespace, String path,
+         HashMap<ResourceLocation, T> registry, BiFunction<ResourceLocation, JsonObject, Optional<T>> builder) {
       pack.m_8031_(PackType.CLIENT_RESOURCES, namespace, path, (location, resource) -> {
          if (location.m_135815_().endsWith(".json")) {
             try {
-               ResourceLocation key = new ResourceLocation(location.toString().replace(path + "/", "").replace(".json", ""));
-               ((Optional)builder.apply(key, JsonParser.parseReader(new BufferedReader(new InputStreamReader((InputStream)resource.m_247737_(), StandardCharsets.UTF_8))).getAsJsonObject())).ifPresent((element) -> {
-                  registry.put(key, element);
-               });
+               ResourceLocation key = new ResourceLocation(
+                     location.toString().replace(path + "/", "").replace(".json", ""));
+               ((Optional) builder.apply(key,
+                     JsonParser
+                           .parseReader(new BufferedReader(
+                                 new InputStreamReader((InputStream) resource.m_247737_(), StandardCharsets.UTF_8)))
+                           .getAsJsonObject()))
+                     .ifPresent((element) -> {
+                        registry.put(key, element);
+                     });
             } catch (Exception var6) {
             }
          }
@@ -159,8 +167,12 @@ public final class ResourceLoader implements ResourceManagerReloadListener {
       pack.m_8031_(PackType.CLIENT_RESOURCES, namespace, "tooltips/presets", (location, resource) -> {
          if (location.m_135815_().endsWith(".json")) {
             try {
-               ResourceLocation key = new ResourceLocation(location.toString().replace("tooltips/presets/", "").replace(".json", ""));
-               JsonObject root = JsonParser.parseReader(new BufferedReader(new InputStreamReader((InputStream)resource.m_247737_(), StandardCharsets.UTF_8))).getAsJsonObject();
+               ResourceLocation key = new ResourceLocation(
+                     location.toString().replace("tooltips/presets/", "").replace(".json", ""));
+               JsonObject root = JsonParser
+                     .parseReader(new BufferedReader(
+                           new InputStreamReader((InputStream) resource.m_247737_(), StandardCharsets.UTF_8)))
+                     .getAsJsonObject();
                TooltipStylePreset style = this.serializeStyle(root);
                StyleFilter predicate = StyleFilter.fromJson(root.getAsJsonObject("filter"));
                if (root.has("priority")) {
@@ -180,8 +192,12 @@ public final class ResourceLoader implements ResourceManagerReloadListener {
       pack.m_8031_(PackType.CLIENT_RESOURCES, namespace, "tooltips/styles", (location, resource) -> {
          if (location.m_135815_().endsWith(".json")) {
             try {
-               ResourceLocation key = new ResourceLocation(location.toString().replace("tooltips/styles/", "").replace(".json", ""));
-               JsonObject root = JsonParser.parseReader(new BufferedReader(new InputStreamReader((InputStream)resource.m_247737_(), StandardCharsets.UTF_8))).getAsJsonObject();
+               ResourceLocation key = new ResourceLocation(
+                     location.toString().replace("tooltips/styles/", "").replace(".json", ""));
+               JsonObject root = JsonParser
+                     .parseReader(new BufferedReader(
+                           new InputStreamReader((InputStream) resource.m_247737_(), StandardCharsets.UTF_8)))
+                     .getAsJsonObject();
                TooltipStylePreset style = this.serializeStyle(root);
                StyleFilter predicate = StyleFilter.fromJson(root.getAsJsonObject("filter"));
                if (root.has("priority")) {
@@ -198,9 +214,16 @@ public final class ResourceLoader implements ResourceManagerReloadListener {
    }
 
    private TooltipStylePreset serializeStyle(JsonObject root) {
-      return (new TooltipStylePreset.Builder()).withPanel(root.has("panel") ? (TooltipPanel)PANELS.get(new ResourceLocation(root.get("panel").getAsString())) : null).withFrame(root.has("frame") ? (TooltipFrame)FRAMES.get(new ResourceLocation(root.get("frame").getAsString())) : null).withIcon(root.has("icon") ? (TooltipIcon)ICONS.get(new ResourceLocation(root.get("icon").getAsString())) : null).withEffects(root.has("effects") ? root.getAsJsonArray("effects").asList().stream().map((effect) -> {
-         return (TooltipEffect)EFFECTS.getOrDefault(new ResourceLocation(effect.getAsString()), (a, b, c) -> {
-         });
-      }).toList() : null).build();
+      return (new TooltipStylePreset.Builder()).withPanel(
+            root.has("panel") ? (TooltipPanel) PANELS.get(new ResourceLocation(root.get("panel").getAsString())) : null)
+            .withFrame(
+                  root.has("frame") ? (TooltipFrame) FRAMES.get(new ResourceLocation(root.get("frame").getAsString()))
+                        : null)
+            .withIcon(root.has("icon") ? (TooltipIcon) ICONS.get(new ResourceLocation(root.get("icon").getAsString()))
+                  : null)
+            .withEffects(root.has("effects") ? root.getAsJsonArray("effects").asList().stream().map((effect) -> {
+               return (TooltipEffect) EFFECTS.getOrDefault(new ResourceLocation(effect.getAsString()), (a, b, c) -> {
+               });
+            }).toList() : null).build();
    }
 }

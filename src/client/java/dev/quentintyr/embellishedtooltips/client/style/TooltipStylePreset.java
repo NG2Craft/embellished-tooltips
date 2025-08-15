@@ -1,10 +1,10 @@
-package com.obscuria.tooltips.client.style;
+package dev.quentintyr.embellishedtooltips.client.style;
 
 import com.google.common.collect.ImmutableList;
-import com.obscuria.tooltips.client.style.effect.TooltipEffect;
-import com.obscuria.tooltips.client.style.frame.TooltipFrame;
-import com.obscuria.tooltips.client.style.icon.TooltipIcon;
-import com.obscuria.tooltips.client.style.panel.TooltipPanel;
+import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
+import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
+import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
+import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -20,7 +20,8 @@ public final class TooltipStylePreset {
    @Nullable
    private final TooltipIcon ICON;
 
-   private TooltipStylePreset(List<TooltipEffect> effects, @Nullable TooltipPanel panel, @Nullable TooltipFrame frame, @Nullable TooltipIcon icon) {
+   private TooltipStylePreset(List<TooltipEffect> effects, @Nullable TooltipPanel panel, @Nullable TooltipFrame frame,
+         @Nullable TooltipIcon icon) {
       this.EFFECTS = ImmutableList.copyOf(effects);
       this.PANEL = panel;
       this.FRAME = frame;
@@ -44,9 +45,13 @@ public final class TooltipStylePreset {
    }
 
    public String toString() {
-      return "[Panel:%s, Frame:%s, Icon:%s, Effects:%s]".formatted(new Object[]{this.PANEL != null ? this.PANEL.getClass().getSimpleName() : "none", this.FRAME != null ? this.FRAME.getClass().getSimpleName() : "none", this.ICON != null ? this.ICON.getClass().getSimpleName() : "none", !this.EFFECTS.isEmpty() ? this.EFFECTS.stream().map((effect) -> {
-         return effect.getClass().getSimpleName();
-      }).toList() : "none"});
+      return "[Panel:%s, Frame:%s, Icon:%s, Effects:%s]"
+            .formatted(new Object[] { this.PANEL != null ? this.PANEL.getClass().getSimpleName() : "none",
+                  this.FRAME != null ? this.FRAME.getClass().getSimpleName() : "none",
+                  this.ICON != null ? this.ICON.getClass().getSimpleName() : "none",
+                  !this.EFFECTS.isEmpty() ? this.EFFECTS.stream().map((effect) -> {
+                     return effect.getClass().getSimpleName();
+                  }).toList() : "none" });
    }
 
    public static class Builder {
@@ -91,14 +96,13 @@ public final class TooltipStylePreset {
          } else {
             Iterator var2 = effects.iterator();
 
-            while(true) {
-               label25:
-               while(var2.hasNext()) {
-                  TooltipEffect effect = (TooltipEffect)var2.next();
+            while (true) {
+               label25: while (var2.hasNext()) {
+                  TooltipEffect effect = (TooltipEffect) var2.next();
                   Iterator var4 = this.effects.iterator();
 
-                  while(var4.hasNext()) {
-                     TooltipEffect loaded = (TooltipEffect)var4.next();
+                  while (var4.hasNext()) {
+                     TooltipEffect loaded = (TooltipEffect) var4.next();
                      if (!effect.canStackWith(loaded)) {
                         continue label25;
                      }

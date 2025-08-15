@@ -1,6 +1,6 @@
-package com.obscuria.tooltips.client.style.icon;
+package dev.quentintyr.embellishedtooltips.client.style.icon;
 
-import com.obscuria.tooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

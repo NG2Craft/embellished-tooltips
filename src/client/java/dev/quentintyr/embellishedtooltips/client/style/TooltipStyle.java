@@ -1,13 +1,13 @@
-package com.obscuria.tooltips.client.style;
+package dev.quentintyr.embellishedtooltips.client.style;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.UnmodifiableIterator;
-import com.obscuria.tooltips.client.StyleManager;
-import com.obscuria.tooltips.client.renderer.TooltipContext;
-import com.obscuria.tooltips.client.style.effect.TooltipEffect;
-import com.obscuria.tooltips.client.style.frame.TooltipFrame;
-import com.obscuria.tooltips.client.style.icon.TooltipIcon;
-import com.obscuria.tooltips.client.style.panel.TooltipPanel;
+import dev.quentintyr.embellishedtooltips.client.StyleManager;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
+import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
+import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
+import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)s
 public final class TooltipStyle {
    private final ImmutableList<TooltipEffect> EFFECTS;
    private final TooltipPanel PANEL;
@@ -54,31 +54,31 @@ public final class TooltipStyle {
    public void renderEffects(Effects.Order order, TooltipContext renderer, Vec2 pos, Point size) {
       renderer.push(() -> {
          float var10003;
-         switch(order) {
-         case LAYER_1_BACK:
-            var10003 = 0.0F;
-            break;
-         case LAYER_2_BACK$TEXT:
-            var10003 = 100.0F;
-            break;
-         case LAYER_3_TEXT$FRAME:
-            var10003 = 400.0F;
-            break;
-         case LAYER_4_FRAME$ICON:
-            var10003 = 500.0F;
-            break;
-         case LAYER_5_FRONT:
-            var10003 = 1000.0F;
-            break;
-         default:
-            throw new IncompatibleClassChangeError();
+         switch (order) {
+            case LAYER_1_BACK:
+               var10003 = 0.0F;
+               break;
+            case LAYER_2_BACK$TEXT:
+               var10003 = 100.0F;
+               break;
+            case LAYER_3_TEXT$FRAME:
+               var10003 = 400.0F;
+               break;
+            case LAYER_4_FRAME$ICON:
+               var10003 = 500.0F;
+               break;
+            case LAYER_5_FRONT:
+               var10003 = 1000.0F;
+               break;
+            default:
+               throw new IncompatibleClassChangeError();
          }
 
          renderer.translate(0.0F, 0.0F, var10003);
          UnmodifiableIterator var5 = this.EFFECTS.iterator();
 
-         while(var5.hasNext()) {
-            TooltipEffect effect = (TooltipEffect)var5.next();
+         while (var5.hasNext()) {
+            TooltipEffect effect = (TooltipEffect) var5.next();
             if (effect.order().equals(order)) {
                effect.render(renderer, pos, size);
             }

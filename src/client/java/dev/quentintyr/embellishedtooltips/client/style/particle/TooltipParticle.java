@@ -1,6 +1,6 @@
-package com.obscuria.tooltips.client.style.particle;
+package dev.quentintyr.embellishedtooltips.client.style.particle;
 
-import com.obscuria.tooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -20,10 +20,10 @@ public abstract class TooltipParticle {
    public abstract void renderParticle(TooltipContext var1, float var2);
 
    public final void render(TooltipContext context) {
-      this.renderParticle(context, (float)(System.currentTimeMillis() - this.START_TIME) / 1000.0F);
+      this.renderParticle(context, (float) (System.currentTimeMillis() - this.START_TIME) / 1000.0F);
    }
 
    public final boolean shouldRemove() {
-      return (float)(System.currentTimeMillis() - this.START_TIME) / 1000.0F > this.MAX_LIFETIME;
+      return (float) (System.currentTimeMillis() - this.START_TIME) / 1000.0F > this.MAX_LIFETIME;
    }
 }

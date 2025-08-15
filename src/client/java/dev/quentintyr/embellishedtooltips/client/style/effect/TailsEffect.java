@@ -1,8 +1,8 @@
-package com.obscuria.tooltips.client.style.effect;
+package dev.quentintyr.embellishedtooltips.client.style.effect;
 
-import com.obscuria.tooltips.client.renderer.TooltipContext;
-import com.obscuria.tooltips.client.style.particle.SparkleParticle;
-import com.obscuria.tooltips.client.style.particle.TooltipParticle;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.style.particle.SparkleParticle;
+import dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +20,14 @@ public class TailsEffect implements TooltipEffect {
       Vec2 tail2 = this.calculateTail(start, size, time, 0.5F);
       if (time - this.lastParticle >= 0.02F) {
          this.lastParticle = time;
-         float rotation = (float)(Math.random() * 6.283185307179586D);
+         float rotation = (float) (Math.random() * 6.283185307179586D);
          float radius = 2.0F;
-         this.particles.add(new SparkleParticle(-1, -40705, 1.0F, tail1, new Vec2(tail1.f_82470_ + (float)Math.cos((double)rotation) * 2.0F, tail1.f_82471_ + (float)Math.sin((double)rotation) * 2.0F)));
-         this.particles.add(new SparkleParticle(-1, -40705, 1.0F, tail2, new Vec2(tail2.f_82470_ + (float)Math.cos((double)rotation) * 2.0F, tail2.f_82471_ + (float)Math.sin((double)rotation) * 2.0F)));
+         this.particles.add(new SparkleParticle(-1, -40705, 1.0F, tail1,
+               new Vec2(tail1.f_82470_ + (float) Math.cos((double) rotation) * 2.0F,
+                     tail1.f_82471_ + (float) Math.sin((double) rotation) * 2.0F)));
+         this.particles.add(new SparkleParticle(-1, -40705, 1.0F, tail2,
+               new Vec2(tail2.f_82470_ + (float) Math.cos((double) rotation) * 2.0F,
+                     tail2.f_82471_ + (float) Math.sin((double) rotation) * 2.0F)));
       }
 
       context.renderParticles(this.particles);
@@ -35,9 +39,17 @@ public class TailsEffect implements TooltipEffect {
    }
 
    private Vec2 calculateTail(Vec2 pos, Point size, float seconds, float offset) {
-      float verticalMod = (float)size.y / 1.0F / (float)size.x;
+      float verticalMod = (float) size.y / 1.0F / (float) size.x;
       float timelapse = (seconds + offset * (2.0F + verticalMod * 2.0F)) % (2.0F + verticalMod * 2.0F);
-      return timelapse < 1.0F ? new Vec2(pos.f_82470_ + (float)size.x * timelapse, pos.f_82471_) : (timelapse < 1.0F + verticalMod ? new Vec2(pos.f_82470_ + (float)size.x, pos.f_82471_ + (float)size.y * ((timelapse - 1.0F) / verticalMod)) : (timelapse < 2.0F + verticalMod ? new Vec2(pos.f_82470_ + (float)size.x - (float)size.x * (timelapse - (1.0F + verticalMod)), pos.f_82471_ + (float)size.y) : new Vec2(pos.f_82470_, pos.f_82471_ + (float)size.y - (float)size.y * ((timelapse - (2.0F + verticalMod)) / verticalMod))));
+      return timelapse < 1.0F ? new Vec2(pos.f_82470_ + (float) size.x * timelapse, pos.f_82471_)
+            : (timelapse < 1.0F + verticalMod
+                  ? new Vec2(pos.f_82470_ + (float) size.x,
+                        pos.f_82471_ + (float) size.y * ((timelapse - 1.0F) / verticalMod))
+                  : (timelapse < 2.0F + verticalMod
+                        ? new Vec2(pos.f_82470_ + (float) size.x - (float) size.x * (timelapse - (1.0F + verticalMod)),
+                              pos.f_82471_ + (float) size.y)
+                        : new Vec2(pos.f_82470_, pos.f_82471_ + (float) size.y
+                              - (float) size.y * ((timelapse - (2.0F + verticalMod)) / verticalMod))));
    }
 
    public boolean canStackWith(TooltipEffect other) {

@@ -1,4 +1,4 @@
-package com.obscuria.tooltips.client.style.effect;
+package dev.quentintyr.embellishedtooltips.client.style.effect;
 
 import com.mojang.logging.annotations.FieldsAreNonnullByDefault;
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;

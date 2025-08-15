@@ -1,4 +1,4 @@
-package com.obscuria.tooltips.client.style;
+package dev.quentintyr.embellishedtooltips.client.style;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -36,9 +36,9 @@ public class StyleFilter {
       if (root.has("items")) {
          var2 = root.get("items").getAsJsonArray().iterator();
 
-         while(var2.hasNext()) {
-            element = (JsonElement)var2.next();
-            Item item = (Item)ForgeRegistries.ITEMS.getValue(new ResourceLocation(element.getAsString()));
+         while (var2.hasNext()) {
+            element = (JsonElement) var2.next();
+            Item item = (Item) ForgeRegistries.ITEMS.getValue(new ResourceLocation(element.getAsString()));
             if (item != null) {
                predicate.ITEMS.add(item);
             }
@@ -48,8 +48,8 @@ public class StyleFilter {
       if (root.has("mods")) {
          var2 = root.get("mods").getAsJsonArray().iterator();
 
-         while(var2.hasNext()) {
-            element = (JsonElement)var2.next();
+         while (var2.hasNext()) {
+            element = (JsonElement) var2.next();
             predicate.MODS.add(element.getAsString().toLowerCase());
          }
       }
@@ -61,8 +61,8 @@ public class StyleFilter {
       if (root.has("rarities")) {
          var2 = root.get("rarities").getAsJsonArray().iterator();
 
-         while(var2.hasNext()) {
-            element = (JsonElement)var2.next();
+         while (var2.hasNext()) {
+            element = (JsonElement) var2.next();
             predicate.RARITIES.add(element.getAsString().toLowerCase());
          }
       }
@@ -73,8 +73,8 @@ public class StyleFilter {
          keywords = root.getAsJsonObject("tag");
          var6 = keywords.keySet().iterator();
 
-         while(var6.hasNext()) {
-            String key = (String)var6.next();
+         while (var6.hasNext()) {
+            String key = (String) var6.next();
             predicate.TAG.add(key, keywords.get(key));
          }
       }
@@ -85,8 +85,8 @@ public class StyleFilter {
          if (keywords.has("any_match")) {
             var6 = keywords.get("any_match").getAsJsonArray().iterator();
 
-            while(var6.hasNext()) {
-               element = (JsonElement)var6.next();
+            while (var6.hasNext()) {
+               element = (JsonElement) var6.next();
                predicate.ENCHANTMENTS_ANY_MATCH.add(element.getAsString().toLowerCase());
             }
          }
@@ -94,8 +94,8 @@ public class StyleFilter {
          if (keywords.has("all_match")) {
             var6 = keywords.get("all_match").getAsJsonArray().iterator();
 
-            while(var6.hasNext()) {
-               element = (JsonElement)var6.next();
+            while (var6.hasNext()) {
+               element = (JsonElement) var6.next();
                predicate.ENCHANTMENTS_ALL_MATCH.add(element.getAsString().toLowerCase());
             }
          }
@@ -106,8 +106,8 @@ public class StyleFilter {
          if (keywords.has("any_match")) {
             var6 = keywords.get("any_match").getAsJsonArray().iterator();
 
-            while(var6.hasNext()) {
-               element = (JsonElement)var6.next();
+            while (var6.hasNext()) {
+               element = (JsonElement) var6.next();
                predicate.KEYWORDS_ANY_MATCH.add(element.getAsString().toLowerCase());
             }
          }
@@ -115,8 +115,8 @@ public class StyleFilter {
          if (keywords.has("all_match")) {
             var6 = keywords.get("all_match").getAsJsonArray().iterator();
 
-            while(var6.hasNext()) {
-               element = (JsonElement)var6.next();
+            while (var6.hasNext()) {
+               element = (JsonElement) var6.next();
                predicate.KEYWORDS_ALL_MATCH.add(element.getAsString().toLowerCase());
             }
          }
@@ -124,8 +124,8 @@ public class StyleFilter {
          if (keywords.has("none_match")) {
             var6 = keywords.get("none_match").getAsJsonArray().iterator();
 
-            while(var6.hasNext()) {
-               element = (JsonElement)var6.next();
+            while (var6.hasNext()) {
+               element = (JsonElement) var6.next();
                predicate.KEYWORDS_NONE_MATCH.add(element.getAsString().toLowerCase());
             }
          }
@@ -141,35 +141,40 @@ public class StyleFilter {
          return false;
       } else if (this.TAG.size() > 0 && this.hasTagMismatch(stack)) {
          return false;
-      } else if (!this.ENCHANTMENTS_ANY_MATCH.isEmpty() && this.hasEnchantmentMismatch(stack, this.ENCHANTMENTS_ANY_MATCH, (results) -> {
-         return results.stream().anyMatch((result) -> {
-            return result;
-         });
-      })) {
+      } else if (!this.ENCHANTMENTS_ANY_MATCH.isEmpty()
+            && this.hasEnchantmentMismatch(stack, this.ENCHANTMENTS_ANY_MATCH, (results) -> {
+               return results.stream().anyMatch((result) -> {
+                  return result;
+               });
+            })) {
          return false;
-      } else if (!this.ENCHANTMENTS_ALL_MATCH.isEmpty() && this.hasEnchantmentMismatch(stack, this.ENCHANTMENTS_ALL_MATCH, (results) -> {
-         return results.stream().allMatch((result) -> {
-            return result;
-         });
-      })) {
+      } else if (!this.ENCHANTMENTS_ALL_MATCH.isEmpty()
+            && this.hasEnchantmentMismatch(stack, this.ENCHANTMENTS_ALL_MATCH, (results) -> {
+               return results.stream().allMatch((result) -> {
+                  return result;
+               });
+            })) {
          return false;
-      } else if (!this.KEYWORDS_ANY_MATCH.isEmpty() && this.hasKeywordMismatch(stack, this.KEYWORDS_ANY_MATCH, (results) -> {
-         return results.stream().anyMatch((result) -> {
-            return result;
-         });
-      })) {
+      } else if (!this.KEYWORDS_ANY_MATCH.isEmpty()
+            && this.hasKeywordMismatch(stack, this.KEYWORDS_ANY_MATCH, (results) -> {
+               return results.stream().anyMatch((result) -> {
+                  return result;
+               });
+            })) {
          return false;
-      } else if (!this.KEYWORDS_ALL_MATCH.isEmpty() && this.hasKeywordMismatch(stack, this.KEYWORDS_ALL_MATCH, (results) -> {
-         return results.stream().allMatch((result) -> {
-            return result;
-         });
-      })) {
+      } else if (!this.KEYWORDS_ALL_MATCH.isEmpty()
+            && this.hasKeywordMismatch(stack, this.KEYWORDS_ALL_MATCH, (results) -> {
+               return results.stream().allMatch((result) -> {
+                  return result;
+               });
+            })) {
          return false;
-      } else if (!this.KEYWORDS_NONE_MATCH.isEmpty() && this.hasKeywordMismatch(stack, this.KEYWORDS_NONE_MATCH, (results) -> {
-         return results.stream().noneMatch((result) -> {
-            return result;
-         });
-      })) {
+      } else if (!this.KEYWORDS_NONE_MATCH.isEmpty()
+            && this.hasKeywordMismatch(stack, this.KEYWORDS_NONE_MATCH, (results) -> {
+               return results.stream().noneMatch((result) -> {
+                  return result;
+               });
+            })) {
          return false;
       } else {
          return this.ITEMS.isEmpty() || this.ITEMS.contains(stack.m_41720_());
@@ -177,7 +182,7 @@ public class StyleFilter {
    }
 
    public String toString() {
-      return "StyleFilter<%s>".formatted(new Object[]{this.priority});
+      return "StyleFilter<%s>".formatted(new Object[] { this.priority });
    }
 
    private boolean hasEnchantmentMismatch(ItemStack stack, List<String> enchantments, StyleFilter.Mode mode) {
@@ -185,8 +190,8 @@ public class StyleFilter {
       Set<Enchantment> set = stack.getAllEnchantments().keySet();
       Iterator var6 = enchantments.iterator();
 
-      while(var6.hasNext()) {
-         String key = (String)var6.next();
+      while (var6.hasNext()) {
+         String key = (String) var6.next();
          results.add(set.stream().anyMatch((enchantment) -> {
             ResourceLocation enchantmentKey = ForgeRegistries.ENCHANTMENTS.getKey(enchantment);
             return enchantmentKey != null && enchantmentKey.toString().equals(key);
@@ -200,8 +205,8 @@ public class StyleFilter {
       List<Boolean> results = new ArrayList();
       Iterator var5 = keywords.iterator();
 
-      while(var5.hasNext()) {
-         String key = (String)var5.next();
+      while (var5.hasNext()) {
+         String key = (String) var5.next();
          if (key.equals("enchanted")) {
             results.add(stack.m_41793_());
          }
@@ -212,7 +217,7 @@ public class StyleFilter {
 
          if (key.equals("cursed")) {
             results.add(stack.getAllEnchantments().entrySet().stream().anyMatch((entry) -> {
-               return ((Enchantment)entry.getKey()).m_6589_();
+               return ((Enchantment) entry.getKey()).m_6589_();
             }));
          }
 
@@ -238,7 +243,7 @@ public class StyleFilter {
                   return false;
                }
 
-               key = (String)var2.next();
+               key = (String) var2.next();
                if (!stack.m_41784_().m_128441_(key)) {
                   return true;
                }
@@ -248,7 +253,12 @@ public class StyleFilter {
                }
 
                value = this.TAG.get(key).getAsJsonPrimitive();
-            } while(value.isString() && value.getAsString().equals(stack.m_41784_().m_128461_(key)) || value.isBoolean() && value.getAsBoolean() == stack.m_41784_().m_128471_(key) || value.isNumber() && (value.getAsInt() == stack.m_41784_().m_128451_(key) || value.getAsDouble() == stack.m_41784_().m_128459_(key) || value.getAsFloat() == stack.m_41784_().m_128457_(key) || value.getAsByte() == stack.m_41784_().m_128445_(key)));
+            } while (value.isString() && value.getAsString().equals(stack.m_41784_().m_128461_(key))
+                  || value.isBoolean() && value.getAsBoolean() == stack.m_41784_().m_128471_(key)
+                  || value.isNumber() && (value.getAsInt() == stack.m_41784_().m_128451_(key)
+                        || value.getAsDouble() == stack.m_41784_().m_128459_(key)
+                        || value.getAsFloat() == stack.m_41784_().m_128457_(key)
+                        || value.getAsByte() == stack.m_41784_().m_128445_(key)));
 
             return true;
          } catch (Exception var5) {

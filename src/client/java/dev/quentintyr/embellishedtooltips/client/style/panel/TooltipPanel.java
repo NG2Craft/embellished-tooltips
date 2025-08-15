@@ -1,6 +1,6 @@
-package com.obscuria.tooltips.client.style.panel;
+package dev.quentintyr.embellishedtooltips.client.style.panel;
 
-import com.obscuria.tooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
 import java.awt.Point;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;

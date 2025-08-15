@@ -1,6 +1,6 @@
-package com.obscuria.tooltips.client.style.icon;
+package dev.quentintyr.embellishedtooltips.client.style.icon;
 
-import com.obscuria.tooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
 
 public class StaticIcon implements TooltipIcon {
    public void render(TooltipContext context, int x, int y) {

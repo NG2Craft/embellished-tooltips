@@ -1,7 +1,7 @@
-package com.obscuria.tooltips.client.style.effect;
+package dev.quentintyr.embellishedtooltips.client.style.effect;
 
-import com.obscuria.tooltips.client.renderer.TooltipContext;
-import com.obscuria.tooltips.client.style.Effects;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.style.Effects;
 import java.awt.Point;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;

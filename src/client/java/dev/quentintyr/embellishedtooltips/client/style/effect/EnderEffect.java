@@ -1,9 +1,9 @@
-package com.obscuria.tooltips.client.style.effect;
+package dev.quentintyr.embellishedtooltips.client.style.effect;
 
-import com.obscuria.tooltips.client.renderer.TooltipContext;
-import com.obscuria.tooltips.client.style.Effects;
-import com.obscuria.tooltips.client.style.particle.EnderParticle;
-import com.obscuria.tooltips.client.style.particle.TooltipParticle;
+import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.style.Effects;
+import dev.quentintyr.embellishedtooltips.client.style.particle.EnderParticle;
+import dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
