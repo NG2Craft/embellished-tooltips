@@ -5,7 +5,7 @@ import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Embellishedtooltips implements ModInitializer {
+public class EmbellishedTooltips implements ModInitializer {
 	public static final String MOD_ID = "embellished-tooltips";
 
 	// This logger is used to write text to the console and the log file.
