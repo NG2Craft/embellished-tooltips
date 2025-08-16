@@ -1,5 +1,5 @@
-package dev.quentintyr.embellishedtooltips;
+// package dev.quentintyr.embellishedtooltips;
 
-public class EmbellishedTooltipsConfig {
+// public class EmbellishedTooltipsConfig {
 
-}
+// }
