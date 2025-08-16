@@ -1,4 +1,4 @@
-package com.obscuria.tooltips.registry;
+package dev.quentintyr.embellishedtooltips.registry;
 
 import com.google.gson.JsonObject;
 import net.minecraftforge.api.distmarker.Dist;
@@ -10,6 +10,6 @@ public interface TooltipElement<T> {
    T build(JsonObject var1);
 
    default T get() {
-      return this.build((JsonObject)null);
+      return this.build((JsonObject) null);
    }
 }

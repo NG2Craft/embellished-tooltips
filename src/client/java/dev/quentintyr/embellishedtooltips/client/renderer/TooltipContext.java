@@ -1,8 +1,8 @@
-package com.obscuria.tooltips.client.renderer;
+package dev.quentintyr.embellishedtooltips.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import com.obscuria.tooltips.client.style.particle.TooltipParticle;
+import dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
@@ -90,8 +90,9 @@ public final class TooltipContext {
       this.context().m_280024_(x, y, x + width, y + height, start, end);
    }
 
-   public void blit(ResourceLocation texture, int x, int y, int xTex, int yTex, int width, int height, int widthTex, int heightTex) {
-      this.context().m_280163_(texture, x, y, (float)xTex, (float)yTex, width, height, widthTex, heightTex);
+   public void blit(ResourceLocation texture, int x, int y, int xTex, int yTex, int width, int height, int widthTex,
+         int heightTex) {
+      this.context().m_280163_(texture, x, y, (float) xTex, (float) yTex, width, height, widthTex, heightTex);
    }
 
    public void push(Runnable runnable) {
@@ -124,11 +125,12 @@ public final class TooltipContext {
    }
 
    public Vec2 lerp(Vec2 from, Vec2 to, float progress) {
-      return new Vec2(Mth.m_14179_(progress, from.f_82470_, to.f_82470_), Mth.m_14179_(progress, from.f_82471_, to.f_82471_));
+      return new Vec2(Mth.m_14179_(progress, from.f_82470_, to.f_82470_),
+            Mth.m_14179_(progress, from.f_82471_, to.f_82471_));
    }
 
    public float angle(Vec2 from, Vec2 to) {
-      return (float)Math.atan2((double)(to.f_82471_ - from.f_82471_), (double)(to.f_82470_ - from.f_82470_));
+      return (float) Math.atan2((double) (to.f_82471_ - from.f_82471_), (double) (to.f_82470_ - from.f_82470_));
    }
 
    public void flush() {
