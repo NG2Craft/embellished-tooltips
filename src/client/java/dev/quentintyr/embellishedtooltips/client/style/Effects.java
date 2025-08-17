@@ -1,22 +1,35 @@
-// package dev.quentintyr.embellishedtooltips.client.style;
+package dev.quentintyr.embellishedtooltips.client.style;
 
-// import net.minecraftforge.api.distmarker.Dist;
-// import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 
-// @OnlyIn(Dist.CLIENT)
-// public class Effects {
-// public static enum Order {
-// LAYER_1_BACK,
-// LAYER_2_BACK$TEXT,
-// LAYER_3_TEXT$FRAME,
-// LAYER_4_FRAME$ICON,
-// LAYER_5_FRONT;
+/**
+ * Defines the rendering layers for tooltip effects
+ */
+@Environment(EnvType.CLIENT)
+public enum Effects {
+    /**
+     * Background layer, rendered first
+     */
+    BACKGROUND,
 
-// // $FF: synthetic method
-// private static Effects.Order[] $values() {
-// return new Effects.Order[] { LAYER_1_BACK, LAYER_2_BACK$TEXT,
-// LAYER_3_TEXT$FRAME, LAYER_4_FRAME$ICON,
-// LAYER_5_FRONT };
-// }
-// }
-// }
+    /**
+     * Between background and text
+     */
+    TEXT_BACKGROUND,
+
+    /**
+     * Between text and frame
+     */
+    TEXT_FRAME,
+
+    /**
+     * Between frame and icon
+     */
+    FRAME,
+
+    /**
+     * Front layer, rendered last
+     */
+    FRONT
+}
