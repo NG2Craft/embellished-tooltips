@@ -1,25 +1,45 @@
-// package dev.quentintyr.embellishedtooltips.client.style.effect;
+package dev.quentintyr.embellishedtooltips.client.style.effect;
 
-// import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
-// import dev.quentintyr.embellishedtooltips.client.style.Effects;
-// import java.awt.Point;
-// import net.minecraft.world.phys.Vec2;
-// import net.minecraftforge.api.distmarker.Dist;
-// import net.minecraftforge.api.distmarker.OnlyIn;
+import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.style.Effects;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.DrawContext;
 
-// @OnlyIn(Dist.CLIENT)
-// @FunctionalInterface
-// public interface TooltipEffect {
-// void render(TooltipContext var1, Vec2 var2, Point var3);
+/**
+ * Represents a visual effect that can be applied to a tooltip.
+ */
+@Environment(EnvType.CLIENT)
+public abstract class TooltipEffect {
 
-// default void reset() {
-// }
+    /**
+     * The layer this effect should be rendered on.
+     */
+    private final Effects layer;
 
-// default Effects.Order order() {
-// return Effects.Order.LAYER_3_TEXT$FRAME;
-// }
+    /**
+     * Creates a new tooltip effect.
+     *
+     * @param layer The layer this effect should be rendered on.
+     */
+    protected TooltipEffect(Effects layer) {
+        this.layer = layer;
+    }
 
-// default boolean canStackWith(TooltipEffect other) {
-// return true;
-// }
-// }
+    /**
+     * Gets the layer this effect should be rendered on.
+     *
+     * @return The layer this effect should be rendered on.
+     */
+    public Effects getLayer() {
+        return this.layer;
+    }
+
+    /**
+     * Renders this effect.
+     *
+     * @param drawContext The DrawContext instance to render with.
+     * @param context     The tooltip context.
+     */
+    public abstract void render(DrawContext drawContext, TooltipContext context);
+}
