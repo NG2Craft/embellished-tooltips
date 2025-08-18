@@ -1,16 +1,28 @@
-// package dev.quentintyr.embellishedtooltips.client.style.frame;
+package dev.quentintyr.embellishedtooltips.client.style.frame;
 
-// import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
-// import java.awt.Point;
-// import net.minecraft.world.phys.Vec2;
-// import net.minecraftforge.api.distmarker.Dist;
-// import net.minecraftforge.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.DrawContext;
+import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
 
-// @OnlyIn(Dist.CLIENT)
-// @FunctionalInterface
-// public interface TooltipFrame {
-// void render(TooltipContext var1, Vec2 var2, Point var3);
+/**
+ * Represents a frame rendering style for tooltips.
+ */
+@Environment(EnvType.CLIENT)
+public abstract class TooltipFrame {
 
-// default void reset() {
-// }
-// }
+    /**
+     * Renders the tooltip frame.
+     *
+     * @param drawContext The DrawContext instance to render with.
+     * @param context     The tooltip context.
+     */
+    public abstract void render(DrawContext drawContext, TooltipContext context);
+
+    /**
+     * Gets the padding to apply to tooltip content due to the frame.
+     *
+     * @return The padding as [left, top, right, bottom].
+     */
+    public abstract int[] getPadding();
+}
