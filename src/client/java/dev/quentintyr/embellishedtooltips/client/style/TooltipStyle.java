@@ -1,136 +1,163 @@
-// package dev.quentintyr.embellishedtooltips.client.style;
+package dev.quentintyr.embellishedtooltips.client.style;
 
-// import com.google.common.collect.ImmutableList;
-// import com.google.common.collect.UnmodifiableIterator;
-// import dev.quentintyr.embellishedtooltips.client.StyleManager;
-// import dev.quentintyr.embellishedtooltips.client.renderer.TooltipContext;
-// import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
-// import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
-// import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
-// import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
-// import java.awt.Point;
-// import java.util.ArrayList;
-// import java.util.List;
-// import net.minecraft.world.phys.Vec2;
-// import net.minecraftforge.api.distmarker.Dist;
-// import net.minecraftforge.api.distmarker.OnlyIn;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import net.minecraft.client.gui.DrawContext;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
+import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
+import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
+import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
+import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
+import dev.quentintyr.embellishedtooltips.client.style.Effects;
 
-// @OnlyIn(Dist.CLIENT)
-// public final class TooltipStyle {
-// private final ImmutableList<TooltipEffect> EFFECTS;
-// private final TooltipPanel PANEL;
-// private final TooltipFrame FRAME;
-// private final TooltipIcon ICON;
+/**
+ * Represents a visual style for tooltips
+ */
+@Environment(EnvType.CLIENT)
+public final class TooltipStyle {
+    private final List<TooltipEffect> effects;
+    private final TooltipPanel panel;
+    private final TooltipFrame frame;
+    private final TooltipIcon icon;
 
-// private TooltipStyle(List<TooltipEffect> effects, TooltipPanel panel,
-// TooltipFrame frame, TooltipIcon icon) {
-// this.EFFECTS = ImmutableList.copyOf(effects);
-// this.PANEL = panel;
-// this.FRAME = frame;
-// this.ICON = icon;
-// }
+    private TooltipStyle(List<TooltipEffect> effects, TooltipPanel panel,
+            TooltipFrame frame, TooltipIcon icon) {
+        this.effects = effects != null ? new ArrayList<>(effects) : new ArrayList<>();
+        this.panel = panel;
+        this.frame = frame;
+        this.icon = icon;
+    }
 
-// public void renderBack(TooltipContext renderer, Vec2 pos, Point size, boolean
-// slot) {
-// renderer.pose().m_85836_();
-// renderer.pose().m_252880_(0.0F, 0.0F, -50.0F);
-// this.PANEL.render(renderer, pos, size, slot);
-// renderer.pose().m_85849_();
-// }
+    /**
+     * Renders the background of the tooltip.
+     *
+     * @param drawContext The draw context to render with.
+     * @param context     The tooltip context.
+     */
+    public void renderBack(DrawContext drawContext, TooltipContext context) {
+        if (this.panel != null) {
+            this.panel.render(drawContext, context);
+        }
+    }
 
-// public void renderFront(TooltipContext renderer, Vec2 pos, Point size) {
-// this.renderEffects(Effects.Order.LAYER_3_TEXT$FRAME, renderer, pos, size);
-// renderer.push(() -> {
-// renderer.translate(0.0F, 0.0F, -50.0F);
-// this.FRAME.render(renderer, pos, size);
-// });
-// this.renderEffects(Effects.Order.LAYER_4_FRAME$ICON, renderer, pos, size);
-// renderer.push(() -> {
-// renderer.translate(pos.f_82470_ + 12.0F, pos.f_82471_ + 12.0F, 500.0F);
-// renderer.push(() -> {
-// this.ICON.render(renderer, -8, -8);
-// });
-// });
-// }
+    /**
+     * Renders the front (frame and icon) of the tooltip.
+     *
+     * @param drawContext The draw context to render with.
+     * @param context     The tooltip context.
+     */
+    public void renderFront(DrawContext drawContext, TooltipContext context) {
+        // Render effects with FRONT layer
+        renderEffects(Effects.FRONT, drawContext, context);
 
-// public void renderEffects(Effects.Order order, TooltipContext renderer, Vec2
-// pos, Point size) {
-// renderer.push(() -> {
-// float var10003;
-// switch (order) {
-// case LAYER_1_BACK:
-// var10003 = 0.0F;
-// break;
-// case LAYER_2_BACK$TEXT:
-// var10003 = 100.0F;
-// break;
-// case LAYER_3_TEXT$FRAME:
-// var10003 = 400.0F;
-// break;
-// case LAYER_4_FRAME$ICON:
-// var10003 = 500.0F;
-// break;
-// case LAYER_5_FRONT:
-// var10003 = 1000.0F;
-// break;
-// default:
-// throw new IncompatibleClassChangeError();
-// }
+        // Render the frame
+        if (this.frame != null) {
+            this.frame.render(drawContext, context);
+        }
 
-// renderer.translate(0.0F, 0.0F, var10003);
-// UnmodifiableIterator var5 = this.EFFECTS.iterator();
+        // Render effects with FRAME layer
+        renderEffects(Effects.FRAME, drawContext, context);
 
-// while (var5.hasNext()) {
-// TooltipEffect effect = (TooltipEffect) var5.next();
-// if (effect.order().equals(order)) {
-// effect.render(renderer, pos, size);
-// }
-// }
+        // Render the icon if present
+        if (this.icon != null) {
+            int iconX = context.getX() + 12;
+            int iconY = context.getY() + 12;
+            this.icon.render(drawContext, context, iconX, iconY);
+        }
+    }
 
-// });
-// }
+    /**
+     * Renders effects for a specific layer.
+     *
+     * @param layer       The layer to render effects for.
+     * @param drawContext The draw context to render with.
+     * @param context     The tooltip context.
+     */
+    public void renderEffects(Effects layer, DrawContext drawContext, TooltipContext context) {
+        for (TooltipEffect effect : effects) {
+            if (effect.getLayer() == layer) {
+                effect.render(drawContext, context);
+            }
+        }
+    }
 
-// public void reset() {
-// this.PANEL.reset();
-// this.ICON.reset();
-// this.FRAME.reset();
-// this.EFFECTS.forEach(TooltipEffect::reset);
-// }
+    /**
+     * Gets the panel component of this style.
+     *
+     * @return The panel component.
+     */
+    public TooltipPanel getPanel() {
+        return panel;
+    }
 
-// public static class Builder {
-// private final List<TooltipEffect> effects = new ArrayList();
-// private TooltipPanel panel;
-// private TooltipFrame frame;
-// private TooltipIcon icon;
+    /**
+     * Gets the frame component of this style.
+     *
+     * @return The frame component.
+     */
+    public TooltipFrame getFrame() {
+        return frame;
+    }
 
-// public Builder() {
-// this.panel = StyleManager.DEFAULT_PANEL;
-// this.frame = StyleManager.DEFAULT_FRAME;
-// this.icon = StyleManager.DEFAULT_ICON;
-// }
+    /**
+     * Gets the icon component of this style.
+     *
+     * @return The icon component.
+     */
+    public TooltipIcon getIcon() {
+        return icon;
+    }
 
-// public TooltipStyle.Builder withPanel(TooltipPanel panel) {
-// this.panel = panel;
-// return this;
-// }
+    /**
+     * Gets the effects of this style.
+     *
+     * @return An unmodifiable list of the effects.
+     */
+    public List<TooltipEffect> getEffects() {
+        return Collections.unmodifiableList(effects);
+    }
 
-// public TooltipStyle.Builder withFrame(TooltipFrame frame) {
-// this.frame = frame;
-// return this;
-// }
+    /**
+     * Builder for creating TooltipStyle instances
+     */
+    public static class Builder {
+        private List<TooltipEffect> effects = new ArrayList<>();
+        private TooltipPanel panel;
+        private TooltipFrame frame;
+        private TooltipIcon icon;
 
-// public TooltipStyle.Builder withIcon(TooltipIcon icon) {
-// this.icon = icon;
-// return this;
-// }
+        public Builder() {
+            // TODO: Replace with actual defaults when StyleManager is implemented
+            this.panel = StyleManager.DEFAULT_PANEL;
+            this.frame = StyleManager.DEFAULT_FRAME;
+            this.icon = StyleManager.DEFAULT_ICON;
+        }
 
-// public TooltipStyle.Builder withEffects(List<TooltipEffect> effects) {
-// this.effects.addAll(effects);
-// return this;
-// }
+        public TooltipStyle.Builder withPanel(TooltipPanel panel) {
+            this.panel = panel;
+            return this;
+        }
 
-// public TooltipStyle build() {
-// return new TooltipStyle(this.effects, this.panel, this.frame, this.icon);
-// }
-// }
-// }
+        public TooltipStyle.Builder withFrame(TooltipFrame frame) {
+            this.frame = frame;
+            return this;
+        }
+
+        public TooltipStyle.Builder withIcon(TooltipIcon icon) {
+            this.icon = icon;
+            return this;
+        }
+
+        public TooltipStyle.Builder withEffects(List<TooltipEffect> effects) {
+            this.effects.addAll(effects);
+            return this;
+        }
+
+        public TooltipStyle build() {
+            return new TooltipStyle(this.effects, this.panel, this.frame, this.icon);
+        }
+    }
+}
