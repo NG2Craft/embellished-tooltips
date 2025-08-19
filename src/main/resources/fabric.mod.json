@@ -16,10 +16,10 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"dev.quentintyr.embellishedtooltips.Embellishedtooltips"
+			"dev.quentintyr.embellishedtooltips.EmbellishedTooltips"
 		],
 		"client": [
-			"dev.quentintyr.embellishedtooltips.EmbellishedtooltipsClient"
+			"dev.quentintyr.embellishedtooltips.EmbellishedTooltipsClient"
 		]
 	},
 	"mixins": [
