@@ -1,53 +1,78 @@
-// package dev.quentintyr.embellishedtooltips.client.style;
+package dev.quentintyr.embellishedtooltips.client.style;
 
-// import com.google.gson.JsonElement;
-// import com.google.gson.JsonObject;
-// import com.google.gson.JsonPrimitive;
-// import java.util.ArrayList;
-// import java.util.Iterator;
-// import java.util.List;
-// import java.util.Set;
-// import net.minecraft.resources.ResourceLocation;
-// import net.minecraft.world.item.EnchantedBookItem;
-// import net.minecraft.world.item.Item;
-// import net.minecraft.world.item.ItemStack;
-// import net.minecraft.world.item.enchantment.Enchantment;
-// import net.minecraftforge.registries.ForgeRegistries;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
+import net.minecraft.util.Identifier;
+import net.minecraft.enchantment.Enchantment;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
-// public class StyleFilter {
-// public int priority = 1000;
-// private final JsonObject TAG = new JsonObject();
-// private final List<Item> ITEMS = new ArrayList();
-// private final List<String> MODS = new ArrayList();
-// private final List<String> RARITIES = new ArrayList();
-// private final List<String> ENCHANTMENTS_ANY_MATCH = new ArrayList();
-// private final List<String> ENCHANTMENTS_ALL_MATCH = new ArrayList();
-// private final List<String> KEYWORDS_ANY_MATCH = new ArrayList();
-// private final List<String> KEYWORDS_ALL_MATCH = new ArrayList();
-// private final List<String> KEYWORDS_NONE_MATCH = new ArrayList();
+public class StyleFilter implements Predicate<ItemStack> {
+    public int priority = 0;
+    private final List<Predicate<ItemStack>> predicates = new ArrayList<>();
 
-// private StyleFilter() {
-// }
+    /**
+     * Creates a new empty style filter.
+     */
+    public StyleFilter() {
+        // Default constructor creates a filter that matches nothing
+    }
 
-// public static StyleFilter fromJson(JsonObject root) {
-// StyleFilter predicate = new StyleFilter();
-// Iterator var2;
-// JsonElement element;
-// if (root.has("items")) {
-// var2 = root.get("items").getAsJsonArray().iterator();
+    /**
+     * Creates a style filter from a JSON object.
+     *
+     * @param json The JSON object to parse.
+     * @return A new style filter.
+     */
+    public static StyleFilter fromJson(JsonObject json) {
+        StyleFilter filter = new StyleFilter();
 
-// while (var2.hasNext()) {
-// element = (JsonElement) var2.next();
-// Item item = (Item) ForgeRegistries.ITEMS.getValue(new
-// ResourceLocation(element.getAsString()));
-// if (item != null) {
-// predicate.ITEMS.add(item);
-// }
-// }
-// }
+        // Parse rarity filter
+        if (json.has("rarity")) {
+            String rarity = json.get("rarity").getAsString();
+            filter.predicates.add((stack) -> {
+                return stack.getRarity().name().toLowerCase().equals(rarity.toLowerCase());
+            });
+        }
 
-// if (root.has("mods")) {
-// var2 = root.get("mods").getAsJsonArray().iterator();
+        // Parse item filter
+        if (json.has("item")) {
+            String itemId = json.get("item").getAsString();
+            Identifier id = new Identifier(itemId);
+            filter.predicates.add((stack) -> {
+                return Registries.ITEM.getId(stack.getItem()).equals(id);
+            });
+        }
+
+        // Parse priority
+        if (json.has("priority")) {
+            filter.priority = json.get("priority").getAsInt();
+        }
+
+        return filter;
+    }
+
+    @Override
+    public boolean test(ItemStack stack) {
+        // Empty predicates list means match nothing
+        if (predicates.isEmpty()) {
+            return false;
+        }
+
+        // All predicates must match
+        for (Predicate<ItemStack> predicate : predicates) {
+            if (!predicate.test(stack)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
 
 // while (var2.hasNext()) {
 // element = (JsonElement) var2.next();

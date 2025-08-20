@@ -8,6 +8,7 @@ import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
 import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
 import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
 import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
+import dev.quentintyr.embellishedtooltips.client.style.panel.ColorRectPanel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,10 +22,21 @@ import java.util.Map;
 public class StyleManager {
     private static StyleManager instance;
 
-    // Default style components
-    public static final TooltipPanel DEFAULT_PANEL = new DefaultTooltipPanel();
-    public static final TooltipFrame DEFAULT_FRAME = new DefaultTooltipFrame();
-    public static final TooltipIcon DEFAULT_ICON = null; // No default icon
+    // Default style components (matching original mod values)
+    public static final TooltipPanel DEFAULT_PANEL = new ColorRectPanel(-267386864, -267386864, 1347420415, 1344798847,
+            553648127);
+    public static final TooltipFrame DEFAULT_FRAME = new TooltipFrame() {
+        @Override
+        public void render(DrawContext drawContext, TooltipContext context) {
+            // Empty default frame
+        }
+
+        @Override
+        public int[] getPadding() {
+            return new int[] { 0, 0, 0, 0 };
+        }
+    };
+    public static final TooltipIcon DEFAULT_ICON = null; // Will be DescentSimpleIcon when implemented
 
     // Registry of named styles
     private final Map<String, TooltipStyle> styles = new HashMap<>();
