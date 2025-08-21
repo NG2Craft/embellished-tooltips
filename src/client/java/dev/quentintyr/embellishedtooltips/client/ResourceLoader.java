@@ -1,50 +1,170 @@
-// package dev.quentintyr.embellishedtooltips.client;
+package dev.quentintyr.embellishedtooltips.client;
 
-// import com.google.common.collect.Lists;
-// import com.google.gson.JsonObject;
-// import com.google.gson.JsonParser;
-// import dev.quentintyr.embellishedtooltips.EmbellishedTooltips;
-// import dev.quentintyr.embellishedtooltips.client.renderer.TooltipRenderer;
-// import dev.quentintyr.embellishedtooltips.client.style.StyleFilter;
-// import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
-// import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
-// import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
-// import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
-// import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
-// import dev.quentintyr.embellishedtooltips.registry.TooltipsRegistry;
-// import java.io.BufferedReader;
-// import java.io.InputStream;
-// import java.io.InputStreamReader;
-// import java.nio.charset.StandardCharsets;
-// import java.util.ArrayList;
-// import java.util.Comparator;
-// import java.util.HashMap;
-// import java.util.Iterator;
-// import java.util.List;
-// import java.util.Objects;
-// import java.util.Optional;
-// import java.util.function.BiFunction;
-// import net.minecraft.resources.ResourceLocation;
-// import net.minecraft.server.packs.PackResources;
-// import net.minecraft.server.packs.PackType;
-// import net.minecraft.server.packs.resources.ResourceManager;
-// import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-// import net.minecraft.world.item.ItemStack;
-// import org.apache.logging.log4j.Marker;
-// import org.apache.logging.log4j.MarkerManager;
-// import oshi.util.tuples.Pair;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import dev.quentintyr.embellishedtooltips.EmbellishedTooltips;
+import dev.quentintyr.embellishedtooltips.client.render.TooltipRenderer;
+import dev.quentintyr.embellishedtooltips.client.style.StyleFilter;
+import dev.quentintyr.embellishedtooltips.client.style.StyleManager;
+import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
+import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
+import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
+import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
+import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
 
-// public final class ResourceLoader implements ResourceManagerReloadListener {
-// public static Marker LOADER = MarkerManager.getMarker("LOADER");
-// public static final ResourceLoader INSTANCE = new ResourceLoader();
-// private static final HashMap<ResourceLocation, TooltipPanel> PANELS = new
-// HashMap();
-// private static final HashMap<ResourceLocation, TooltipFrame> FRAMES = new
-// HashMap();
-// private static final HashMap<ResourceLocation, TooltipIcon> ICONS = new
-// HashMap();
-// private static final HashMap<ResourceLocation, TooltipEffect> EFFECTS = new
-// HashMap();
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.item.ItemStack;
+import net.minecraft.resource.Resource;
+import net.minecraft.resource.ResourceManager;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.Pair;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.function.BiFunction;
+
+/**
+ * Handles loading of tooltip resources from data packs.
+ */
+public class ResourceLoader implements SimpleSynchronousResourceReloadListener {
+    public static final ResourceLoader INSTANCE = new ResourceLoader();
+    private static final Identifier RESOURCE_LOADER_ID = new Identifier(EmbellishedTooltips.MODID, "resource_loader");
+
+    // Registry maps for components
+    private static final Map<Identifier, TooltipPanel> PANELS = new HashMap<>();
+    private static final Map<Identifier, TooltipFrame> FRAMES = new HashMap<>();
+    private static final Map<Identifier, TooltipIcon> ICONS = new HashMap<>();
+    private static final Map<Identifier, TooltipEffect> EFFECTS = new HashMap<>();
+
+    // Storage for styles and presets
+    private static final List<Identifier> PRESETS_KEYS = new ArrayList<>();
+    private static final List<Identifier> STYLES_KEYS = new ArrayList<>();
+    private static final Map<Identifier, Pair<StyleFilter, TooltipStylePreset>> PRESETS = new HashMap<>();
+    private static final Map<Identifier, Pair<StyleFilter, TooltipStylePreset>> STYLES = new HashMap<>();
+
+    private ResourceLoader() {
+    }
+
+    @Override
+    public Identifier getFabricId() {
+        return RESOURCE_LOADER_ID;
+    }
+
+    @Override
+    public void reload(ResourceManager resourceManager) {
+        // Load the styles from the resource manager
+        EmbellishedTooltips.LOGGER.info("Loading tooltip resources");
+
+        // Clear existing data
+        clear();
+
+        // Load components and styles from resources
+        loadResources(resourceManager);
+
+        // Sort styles by priority
+        sort();
+
+        // Initialize the style manager with loaded styles
+        StyleManager.getInstance();
+
+        EmbellishedTooltips.LOGGER.info("Loaded {} Elements, {} Presets and {} Styles",
+                PANELS.size() + FRAMES.size() + ICONS.size() + EFFECTS.size(),
+                PRESETS.size(), STYLES.size());
+    }
+
+    /**
+     * Get the appropriate tooltip style for an item stack.
+     *
+     * @param stack The item stack to get a style for.
+     * @return An optional containing the style, or empty if no style matches.
+     */
+    public static Optional<TooltipStylePreset> getStyleFor(ItemStack stack) {
+        TooltipStylePreset.Builder builder = new TooltipStylePreset.Builder();
+
+        // First check for specific styles
+        for (Identifier key : STYLES_KEYS) {
+            Pair<StyleFilter, TooltipStylePreset> pair = STYLES.get(key);
+            if (pair.getLeft().test(stack)) {
+                pair.getRight().getPanel().ifPresent(builder::withPanel);
+                pair.getRight().getFrame().ifPresent(builder::withFrame);
+                pair.getRight().getIcon().ifPresent(builder::withIcon);
+                builder.withEffects(pair.getRight().getEffects());
+                break;
+            }
+        }
+
+        // Then apply any matching presets
+        for (Identifier key : PRESETS_KEYS) {
+            Pair<StyleFilter, TooltipStylePreset> pair = PRESETS.get(key);
+            if (pair.getLeft().test(stack)) {
+                pair.getRight().getPanel().ifPresent(panel -> builder.withPanel(panel, false));
+                pair.getRight().getFrame().ifPresent(frame -> builder.withFrame(frame, false));
+                pair.getRight().getIcon().ifPresent(icon -> builder.withIcon(icon, false));
+                builder.withEffects(pair.getRight().getEffects());
+            }
+        }
+
+        return builder.isEmpty() ? Optional.empty() : Optional.of(builder.build());
+    }
+
+    /**
+     * Clear all loaded resources.
+     */
+    private void clear() {
+        PANELS.clear();
+        FRAMES.clear();
+        ICONS.clear();
+        EFFECTS.clear();
+        PRESETS_KEYS.clear();
+        PRESETS.clear();
+        STYLES_KEYS.clear();
+        STYLES.clear();
+    }
+
+    /**
+     * Sort styles and presets by priority.
+     */
+    private void sort() {
+        List<Identifier> presets = PRESETS_KEYS.stream()
+                .sorted(Comparator.comparingInt(key -> PRESETS.get(key).getLeft().priority))
+                .toList();
+        PRESETS_KEYS.clear();
+        PRESETS_KEYS.addAll(presets);
+
+        List<Identifier> styles = STYLES_KEYS.stream()
+                .sorted(Comparator.comparingInt(key -> STYLES.get(key).getLeft().priority))
+                .toList();
+        STYLES_KEYS.clear();
+        STYLES_KEYS.addAll(styles);
+    }
+
+    /**
+     * Load all resources from the resource manager.
+     *
+     * @param manager The resource manager.
+     */
+    private void loadResources(ResourceManager manager) {
+        // For now, we'll just set up the default style in StyleManager
+        // In the future, this will load custom styles from JSON files
+
+        // TODO: Implement full resource loading for custom styles
+        // This would include:
+        // 1. Loading panels, frames, icons, and effects from JSON files
+        // 2. Loading presets and styles from JSON files
+        // 3. Creating TooltipStylePreset instances from these components
+
+        // For example:
+        // loadElements(manager, "tooltips/panels", PANELS, this::buildPanel);
+        // loadElements(manager, "tooltips/frames", FRAMES, this::buildFrame);
+        // loadElements(manager, "tooltips/icons", ICONS, this::buildIcon);
+        // loadElements(manager, "tooltips/effects", EFFECTS, this::buildEffect);
+        // loadPresets(manager);
+        // loadStyles(manager);
+    }
+}
 // private static final List<ResourceLocation> PRESETS_KEYS = new ArrayList();
 // private static final List<ResourceLocation> STYLES_KEYS = new ArrayList();
 // private static final HashMap<ResourceLocation, Pair<StyleFilter,
