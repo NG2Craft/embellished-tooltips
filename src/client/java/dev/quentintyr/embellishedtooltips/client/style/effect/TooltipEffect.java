@@ -42,4 +42,15 @@ public abstract class TooltipEffect {
      * @param context     The tooltip context.
      */
     public abstract void render(DrawContext drawContext, TooltipContext context);
+    
+    /**
+     * Determines if this effect can stack with another effect.
+     *
+     * @param other The other effect to check.
+     * @return True if this effect can stack with the other effect, false otherwise.
+     */
+    public boolean canStackWith(TooltipEffect other) {
+        // Default implementation: effects of the same class cannot stack
+        return !this.getClass().equals(other.getClass());
+    }
 }
