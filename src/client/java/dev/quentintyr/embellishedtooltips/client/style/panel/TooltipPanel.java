@@ -2,8 +2,9 @@ package dev.quentintyr.embellishedtooltips.client.style.panel;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.util.math.Vec2f;
 import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
+import java.awt.Point;
 
 /**
  * Represents a panel rendering style for tooltips.
@@ -15,10 +16,12 @@ public interface TooltipPanel {
     /**
      * Renders the tooltip panel.
      *
-     * @param drawContext The DrawContext instance to render with.
-     * @param context     The tooltip context.
+     * @param context The tooltip context for rendering.
+     * @param pos     The position to render at.
+     * @param size    The size of the panel.
+     * @param slot    Whether to render the item slot highlight.
      */
-    void render(DrawContext drawContext, TooltipContext context);
+    void render(TooltipContext context, Vec2f pos, Point size, boolean slot);
 
     /**
      * Reset any state for this panel.

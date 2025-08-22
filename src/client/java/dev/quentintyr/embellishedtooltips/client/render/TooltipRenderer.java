@@ -1,7 +1,6 @@
 package dev.quentintyr.embellishedtooltips.client.render;
 
 import dev.quentintyr.embellishedtooltips.client.style.Effects;
-import dev.quentintyr.embellishedtooltips.client.style.StyleManager;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
 
 import net.minecraft.client.MinecraftClient;
@@ -26,7 +25,10 @@ import java.util.List;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import org.jetbrains.annotations.Nullable;
-import dev.quentintyr.embellishedtooltips.client.render.BasicTooltipContext;
+
+import dev.quentintyr.embellishedtooltips.client.StyleManager;
+import net.minecraft.util.math.Vec2f;
+import java.awt.Point;
 
 /**
  * Handles the rendering of tooltips
@@ -85,22 +87,21 @@ public final class TooltipRenderer {
             int posY = y;
 
             // Create tooltip context
-            MatrixStack matrixStack = drawContext.getMatrices();
-            BasicTooltipContext context = new BasicTooltipContext(
-                    posX, posY, tooltipWidth, tooltipHeight,
-                    componentsToText(components), stack,
-                    MinecraftClient.getInstance().getWindow().getScaledWidth(),
-                    MinecraftClient.getInstance().getWindow().getScaledHeight(),
-                    matrixStack);
+            TooltipContext context = new TooltipContext(drawContext);
+            context.define(stack, tooltipSeconds);
+
+            // Calculate position and size
+            Vec2f pos = new Vec2f(posX, posY);
+            Point size = new Point(tooltipWidth, tooltipHeight);
 
             // Render background
-            renderStyle.renderBack(drawContext, context);
+            renderStyle.renderBack(context, pos, size, true);
 
             // Render text
             renderText(drawContext, font, components, posX + 4, posY + 4);
 
             // Render front (frame, icon)
-            renderStyle.renderFront(drawContext, context);
+            renderStyle.renderFront(context, pos, size);
 
             // Render special cases for armor and tools
             if (stack.getItem() instanceof ArmorItem) {

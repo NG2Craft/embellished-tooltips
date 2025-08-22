@@ -3,78 +3,79 @@ package dev.quentintyr.embellishedtooltips.client.style.panel;
 import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.util.math.Vec2f;
+import java.awt.Point;
 
 /**
  * A panel that renders a colored rectangle as the tooltip background.
+ * This matches the original ColorRectPanel from Obscure Tooltips.
  */
 @Environment(EnvType.CLIENT)
 public class ColorRectPanel implements TooltipPanel {
-    private final int backTopColor;
-    private final int backBottomColor;
-    private final int borderTopColor;
-    private final int borderBottomColor;
-    private final int slotColor;
+    private final int BACK_TOP;
+    private final int BACK_BOTTOM;
+    private final int BORDER_TOP;
+    private final int BORDER_BOTTOM;
+    private final int SLOT;
 
     /**
      * Creates a new color rectangle panel.
      *
-     * @param backTopColor     The top color of the background.
-     * @param backBottomColor  The bottom color of the background.
-     * @param borderTopColor   The top color of the border.
-     * @param borderBottomColor The bottom color of the border.
-     * @param slotColor        The color of the slot indicator.
+     * @param backTop      The top color of the background.
+     * @param backBottom   The bottom color of the background.
+     * @param borderTop    The top color of the border.
+     * @param borderBottom The bottom color of the border.
+     * @param slot         The color of the slot indicator.
      */
-    public ColorRectPanel(int backTopColor, int backBottomColor, int borderTopColor, int borderBottomColor, int slotColor) {
-        this.backTopColor = backTopColor;
-        this.backBottomColor = backBottomColor;
-        this.borderTopColor = borderTopColor;
-        this.borderBottomColor = borderBottomColor;
-        this.slotColor = slotColor;
+    public ColorRectPanel(int backTop, int backBottom, int borderTop, int borderBottom, int slot) {
+        this.BACK_TOP = backTop;
+        this.BACK_BOTTOM = backBottom;
+        this.BORDER_TOP = borderTop;
+        this.BORDER_BOTTOM = borderBottom;
+        this.SLOT = slot;
     }
 
     @Override
-    public void render(DrawContext drawContext, TooltipContext context) {
-        // Draw tooltip background with custom colors
-        int x = context.getX();
-        int y = context.getY();
-        int width = context.getWidth();
-        int height = context.getHeight();
-        
-        // Fill the background
-        drawContext.fill(x + 1, y, x + width - 1, y + height, this.backTopColor);
-        drawContext.fill(x, y + 1, x + 1, y + height - 1, this.backTopColor);
-        drawContext.fill(x + width - 1, y + 1, x + width, y + height - 1, this.backTopColor);
-        
-        // Draw the borders
-        drawContext.fill(x + 1, y + height - 1, x + width - 1, y + height, this.borderBottomColor);
-        drawContext.fill(x, y + height - 1, x + 1, y + height, this.borderBottomColor);
-        drawContext.fill(x + width - 1, y + height - 1, x + width, y + height, this.borderBottomColor);
-        
-        // Draw the top border
-        drawContext.fill(x + 1, y, x + width - 1, y + 1, this.borderTopColor);
-        drawContext.fill(x, y, x + 1, y + 1, this.borderTopColor);
-        drawContext.fill(x + width - 1, y, x + width, y + 1, this.borderTopColor);
-        
-        // Draw slot indicator for item tooltips
-        if (context.getStack() != null) {
-            drawContext.fill(
-                x + 2, 
-                y + 1, 
-                x + 2 + 20, 
-                y + 1 + 1, 
-                this.slotColor
-            );
+    public void render(TooltipContext context, Vec2f pos, Point size, boolean slot) {
+        int x = (int) pos.x;
+        int y = (int) pos.y;
+
+        // Render tooltip background similar to
+        // TooltipRenderUtil.renderTooltipBackground
+        renderTooltipBackground(context, x, y, size.x, size.y, 400, BACK_TOP, BACK_BOTTOM, BORDER_TOP, BORDER_BOTTOM);
+
+        // Render slot highlight if requested
+        if (slot) {
+            context.push(() -> {
+                context.translate(0.0F, 0.0F, 400.0F);
+                context.fillGradient(x + 2, y + 1, 20, 1, SLOT, SLOT);
+                context.fillGradient(x + 1, y + 2, 22, 20, SLOT, SLOT);
+                context.fillGradient(x + 2, y + 22, 20, 1, SLOT, SLOT);
+            });
         }
     }
+
+    /**
+     * Renders a tooltip background similar to Forge's TooltipRenderUtil.
+     */
+    private void renderTooltipBackground(TooltipContext context, int x, int y, int width, int height, int z,
+            int backgroundColorStart, int backgroundColorEnd,
+            int borderColorStart, int borderColorEnd) {
+        context.push(() -> {
+            context.translate(0.0F, 0.0F, z);
+
+            // Draw background gradient
+            context.fillGradient(x + 1, y, width - 2, 1, backgroundColorStart, backgroundColorStart);
+            context.fillGradient(x + 1, y + height - 1, width - 2, 1, backgroundColorEnd, backgroundColorEnd);
+            context.fillGradient(x + 1, y + 1, width - 2, height - 2, backgroundColorStart, backgroundColorEnd);
+            context.fillGradient(x, y + 1, 1, height - 2, backgroundColorStart, backgroundColorEnd);
+            context.fillGradient(x + width - 1, y + 1, 1, height - 2, backgroundColorStart, backgroundColorEnd);
+
+            // Draw border
+            context.fillGradient(x + 1, y + 1, width - 2, 1, borderColorStart, borderColorStart);
+            context.fillGradient(x + 1, y + height - 2, width - 2, 1, borderColorEnd, borderColorEnd);
+            context.fillGradient(x + 1, y + 1, 1, height - 2, borderColorStart, borderColorEnd);
+            context.fillGradient(x + width - 2, y + 1, 1, height - 2, borderColorStart, borderColorEnd);
+        });
+    }
 }
-// if (slot) {
-// context.push(() -> {
-// context.translate(0.0F, 0.0F, 400.0F);
-// context.fillGradient(x + 2, y + 1, 20, 1, this.SLOT, this.SLOT);
-// context.fillGradient(x + 1, y + 2, 22, 20, this.SLOT, this.SLOT);
-// context.fillGradient(x + 2, y + 22, 20, 1, this.SLOT, this.SLOT);
-// });
-// }
-// }
-// }

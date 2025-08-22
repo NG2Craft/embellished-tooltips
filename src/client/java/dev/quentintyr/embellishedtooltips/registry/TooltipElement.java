@@ -1,15 +1,15 @@
-// package dev.quentintyr.embellishedtooltips.registry;
+package dev.quentintyr.embellishedtooltips.registry;
 
-// import com.google.gson.JsonObject;
-// import net.minecraftforge.api.distmarker.Dist;
-// import net.minecraftforge.api.distmarker.OnlyIn;
+import com.google.gson.JsonObject;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 
-// @OnlyIn(Dist.CLIENT)
-// @FunctionalInterface
-// public interface TooltipElement<T> {
-// T build(JsonObject var1);
+@Environment(EnvType.CLIENT)
+@FunctionalInterface
+public interface TooltipElement<T> {
+    T build(JsonObject var1);
 
-// default T get() {
-// return this.build((JsonObject) null);
-// }
-// }
+    default T get() {
+        return this.build((JsonObject) null);
+    }
+}
