@@ -1,6 +1,5 @@
 package dev.quentintyr.embellishedtooltips.client.render;
 
-import dev.quentintyr.embellishedtooltips.client.style.Effects;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
 
 import net.minecraft.client.MinecraftClient;
@@ -8,15 +7,13 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipPositioner;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.client.render.DiffuseLighting;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.item.ArmorItem;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ToolItem;
 import org.joml.Quaternionf;
@@ -61,7 +58,7 @@ public final class TooltipRenderer {
 
         updateStyle(stack);
 
-        if (renderStyle != null && !components.isEmpty()) {
+        if (renderStyle != null && components != null && !components.isEmpty()) {
             // Calculate tooltip size
             int tooltipWidth = 0;
             int tooltipHeight = 0;
@@ -87,7 +84,8 @@ public final class TooltipRenderer {
             int posY = y;
 
             // Create tooltip context
-            TooltipContext context = new TooltipContext(drawContext);
+            dev.quentintyr.embellishedtooltips.client.render.TooltipContext context = new dev.quentintyr.embellishedtooltips.client.render.TooltipContext(
+                    drawContext);
             context.define(stack, tooltipSeconds);
 
             // Calculate position and size
@@ -113,6 +111,74 @@ public final class TooltipRenderer {
             }
 
             return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Simplified render method for Screen hook.
+     * 
+     * @param drawContext The draw context
+     * @param stack       The item stack
+     * @param x           Mouse X position
+     * @param y           Mouse Y position
+     * @return True if custom rendering should be used, false to fall back to
+     *         default
+     */
+    public static boolean render(DrawContext drawContext, ItemStack stack, int x, int y) {
+        updateStyle(stack);
+
+        if (renderStyle != null) {
+            // Create a basic tooltip with style
+            MinecraftClient client = MinecraftClient.getInstance();
+            TextRenderer font = client.textRenderer;
+
+            // Get tooltip text from the item
+            List<Text> lines = stack.getTooltip(client.player,
+                    client.options.advancedItemTooltips ? TooltipContext.Default.ADVANCED
+                            : TooltipContext.Default.BASIC);
+
+            if (!lines.isEmpty()) {
+                // Calculate tooltip size
+                int tooltipWidth = 0;
+                int tooltipHeight = lines.size() * font.fontHeight + (lines.size() - 1) * 2; // 2 pixels between lines
+
+                for (Text line : lines) {
+                    int lineWidth = font.getWidth(line);
+                    if (lineWidth > tooltipWidth) {
+                        tooltipWidth = lineWidth;
+                    }
+                }
+
+                // Add padding
+                tooltipWidth += 8;
+                tooltipHeight += 8;
+
+                // Create tooltip context
+                dev.quentintyr.embellishedtooltips.client.render.TooltipContext context = new dev.quentintyr.embellishedtooltips.client.render.TooltipContext(
+                        drawContext);
+                context.define(stack, tooltipSeconds);
+
+                // Calculate position and size
+                Vec2f pos = new Vec2f(x, y);
+                Point size = new Point(tooltipWidth, tooltipHeight);
+
+                // Render background
+                renderStyle.renderBack(context, pos, size, true);
+
+                // Render text
+                int currentY = y + 4;
+                for (Text line : lines) {
+                    drawContext.drawText(font, line, x + 4, currentY, 0xFFFFFFFF, true);
+                    currentY += font.fontHeight + 2;
+                }
+
+                // Render front (frame, icon)
+                renderStyle.renderFront(context, pos, size);
+
+                return true;
+            }
         }
 
         return false;

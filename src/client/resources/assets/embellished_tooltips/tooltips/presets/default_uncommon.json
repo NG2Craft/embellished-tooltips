@@ -1,6 +1,6 @@
 {
   "priority": 1000,
-  "icon": "obscure_tooltips:rare",
+  "icon": "embellished-tooltips:rare",
   "filter": {
     "rarity": [ "uncommon" ]
   }

@@ -1,16 +1,17 @@
 package dev.quentintyr.embellishedtooltips.client;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.quentintyr.embellishedtooltips.EmbellishedTooltips;
-import dev.quentintyr.embellishedtooltips.client.render.TooltipRenderer;
-import dev.quentintyr.embellishedtooltips.client.StyleManager;
 import dev.quentintyr.embellishedtooltips.client.style.StyleFilter;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
 import dev.quentintyr.embellishedtooltips.client.style.effect.TooltipEffect;
 import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
 import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
 import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
+import dev.quentintyr.embellishedtooltips.registry.TooltipsRegistry;
 
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.item.ItemStack;
@@ -147,22 +148,177 @@ public class ResourceLoader implements SimpleSynchronousResourceReloadListener {
      * @param manager The resource manager.
      */
     private void loadResources(ResourceManager manager) {
-        // For now, we'll just set up the default style in StyleManager
-        // In the future, this will load custom styles from JSON files
+        // Load style components (panels, frames, icons, effects)
+        loadElements(manager, "tooltips/panels", PANELS, TooltipsRegistry::buildPanel);
+        loadElements(manager, "tooltips/frames", FRAMES, TooltipsRegistry::buildFrame);
+        loadElements(manager, "tooltips/icons", ICONS, TooltipsRegistry::buildIcon);
+        loadElements(manager, "tooltips/effects", EFFECTS, TooltipsRegistry::buildEffect);
 
-        // TODO: Implement full resource loading for custom styles
-        // This would include:
-        // 1. Loading panels, frames, icons, and effects from JSON files
-        // 2. Loading presets and styles from JSON files
-        // 3. Creating TooltipStylePreset instances from these components
+        // Load presets and styles
+        loadPresets(manager);
+        loadStyles(manager);
+    }
 
-        // For example:
-        // loadElements(manager, "tooltips/panels", PANELS, this::buildPanel);
-        // loadElements(manager, "tooltips/frames", FRAMES, this::buildFrame);
-        // loadElements(manager, "tooltips/icons", ICONS, this::buildIcon);
-        // loadElements(manager, "tooltips/effects", EFFECTS, this::buildEffect);
-        // loadPresets(manager);
-        // loadStyles(manager);
+    /**
+     * Load style elements from JSON files.
+     */
+    private <T> void loadElements(ResourceManager resourceManager, String path,
+            Map<Identifier, T> storage, BiFunction<Identifier, JsonObject, Optional<T>> builder) {
+        Map<Identifier, Resource> resources = resourceManager.findResources(path, id -> id.getPath().endsWith(".json"));
+
+        for (Map.Entry<Identifier, Resource> entry : resources.entrySet()) {
+            Identifier resourceId = entry.getKey();
+            Resource resource = entry.getValue();
+
+            try {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                    JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+
+                    // Extract the element name from the path
+                    String elementPath = resourceId.getPath();
+                    String elementName = elementPath.substring(elementPath.lastIndexOf('/') + 1,
+                            elementPath.lastIndexOf('.'));
+                    Identifier elementId = new Identifier(resourceId.getNamespace(), elementName);
+
+                    Optional<T> element = builder.apply(elementId, json);
+                    if (element.isPresent()) {
+                        storage.put(elementId, element.get());
+                        EmbellishedTooltips.LOGGER.debug("Loaded {} element: {}", path, elementId);
+                    }
+                }
+            } catch (IOException e) {
+                EmbellishedTooltips.LOGGER.error("Failed to load resource: {}", resourceId, e);
+            }
+        }
+    }
+
+    /**
+     * Load tooltip style presets.
+     */
+    private void loadPresets(ResourceManager resourceManager) {
+        Map<Identifier, Resource> resources = resourceManager.findResources("tooltips/presets",
+                id -> id.getPath().endsWith(".json"));
+
+        for (Map.Entry<Identifier, Resource> entry : resources.entrySet()) {
+            Identifier resourceId = entry.getKey();
+            Resource resource = entry.getValue();
+
+            try {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                    JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+
+                    // Parse the preset
+                    Optional<Pair<StyleFilter, TooltipStylePreset>> preset = parsePreset(resourceId, json);
+                    if (preset.isPresent()) {
+                        PRESETS.put(resourceId, preset.get());
+                        PRESETS_KEYS.add(resourceId);
+                        EmbellishedTooltips.LOGGER.debug("Loaded preset: {}", resourceId);
+                    }
+                }
+            } catch (IOException e) {
+                EmbellishedTooltips.LOGGER.error("Failed to load preset: {}", resourceId, e);
+            }
+        }
+    }
+
+    /**
+     * Load tooltip styles.
+     */
+    private void loadStyles(ResourceManager resourceManager) {
+        Map<Identifier, Resource> resources = resourceManager.findResources("tooltips/styles",
+                id -> id.getPath().endsWith(".json"));
+
+        for (Map.Entry<Identifier, Resource> entry : resources.entrySet()) {
+            Identifier resourceId = entry.getKey();
+            Resource resource = entry.getValue();
+
+            try {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                    JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+
+                    // Parse the style
+                    Optional<Pair<StyleFilter, TooltipStylePreset>> style = parseStyle(resourceId, json);
+                    if (style.isPresent()) {
+                        STYLES.put(resourceId, style.get());
+                        STYLES_KEYS.add(resourceId);
+                        EmbellishedTooltips.LOGGER.debug("Loaded style: {}", resourceId);
+                    }
+                }
+            } catch (IOException e) {
+                EmbellishedTooltips.LOGGER.error("Failed to load style: {}", resourceId, e);
+            }
+        }
+    }
+
+    /**
+     * Parse a preset from JSON.
+     */
+    private Optional<Pair<StyleFilter, TooltipStylePreset>> parsePreset(Identifier id, JsonObject json) {
+        try {
+            // TODO: Implement StyleFilter parsing
+            StyleFilter filter = new StyleFilter(); // Placeholder
+
+            // Parse the preset components
+            TooltipStylePreset.Builder builder = new TooltipStylePreset.Builder();
+
+            if (json.has("panel")) {
+                String panelId = json.get("panel").getAsString();
+                TooltipPanel panel = PANELS.get(new Identifier(panelId));
+                if (panel != null) {
+                    builder.withPanel(panel);
+                }
+            }
+
+            if (json.has("frame")) {
+                String frameId = json.get("frame").getAsString();
+                TooltipFrame frame = FRAMES.get(new Identifier(frameId));
+                if (frame != null) {
+                    builder.withFrame(frame);
+                }
+            }
+
+            if (json.has("icon")) {
+                String iconId = json.get("icon").getAsString();
+                TooltipIcon icon = ICONS.get(new Identifier(iconId));
+                if (icon != null) {
+                    builder.withIcon(icon);
+                }
+            }
+
+            // Parse effects array
+            if (json.has("effects")) {
+                JsonArray effectsArray = json.getAsJsonArray("effects");
+                List<TooltipEffect> effects = new ArrayList<>();
+                for (JsonElement effectElement : effectsArray) {
+                    if (effectElement.isJsonPrimitive()) {
+                        String effectId = effectElement.getAsString();
+                        TooltipEffect effect = EFFECTS.get(new Identifier(effectId));
+                        if (effect != null) {
+                            effects.add(effect);
+                        }
+                    }
+                }
+                if (!effects.isEmpty()) {
+                    builder.withEffects(effects);
+                }
+            }
+
+            return Optional.of(new Pair<>(filter, builder.build()));
+        } catch (Exception e) {
+            EmbellishedTooltips.LOGGER.error("Failed to parse preset: {}", id, e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Parse a style from JSON.
+     */
+    private Optional<Pair<StyleFilter, TooltipStylePreset>> parseStyle(Identifier id, JsonObject json) {
+        // For now, styles and presets have the same format
+        return parsePreset(id, json);
     }
 }
 // private static final List<ResourceLocation> PRESETS_KEYS = new ArrayList();
