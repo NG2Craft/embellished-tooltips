@@ -1,6 +1,8 @@
 package dev.quentintyr.embellishedtooltips.client.render;
 
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
+import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
+import dev.quentintyr.embellishedtooltips.client.ResourceLoader;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -19,6 +21,7 @@ import net.minecraft.item.ToolItem;
 import org.joml.Quaternionf;
 
 import java.util.List;
+import java.util.Optional;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import org.jetbrains.annotations.Nullable;
@@ -57,6 +60,10 @@ public final class TooltipRenderer {
             TooltipPositioner positioner) {
 
         updateStyle(stack);
+
+        System.out.println(
+                "TooltipRenderer: render called, stack=" + (stack.isEmpty() ? "EMPTY" : stack.getItem().toString())
+                        + ", renderStyle=" + (renderStyle != null ? "present" : "null"));
 
         if (renderStyle != null && components != null && !components.isEmpty()) {
             // Calculate tooltip size
@@ -209,13 +216,28 @@ public final class TooltipRenderer {
             int y) {
         int currentY = y;
 
+        // Use the matrix stack and vertex consumers from DrawContext
+        MatrixStack matrices = drawContext.getMatrices();
+        VertexConsumerProvider.Immediate vertexConsumers = drawContext.getVertexConsumers();
+
         for (TooltipComponent component : components) {
-            // Draw component using DrawContext which handles the rendering details
+            // Push matrix state
+            matrices.push();
+
+            // Draw text first
+            component.drawText(font, x, currentY, matrices.peek().getPositionMatrix(), vertexConsumers);
+
+            // Draw items
             component.drawItems(font, x, currentY, drawContext);
-            // In Fabric 1.20.1, we need to use individual methods instead of drawText
-            // directly
+
+            // Pop matrix state
+            matrices.pop();
+
             currentY += component.getHeight() + 2; // Add spacing between components
         }
+
+        // Ensure all text is rendered
+        vertexConsumers.drawCurrentLayer();
     }
 
     /**
@@ -234,8 +256,23 @@ public final class TooltipRenderer {
         }
         tooltipSeconds = (currentTimeMillis - tooltipStartMillis) / 1000.0F;
 
-        // Get style from StyleManager
-        renderStyle = StyleManager.getInstance().getDefaultStyle();
+        // Get style from ResourceLoader based on the actual ItemStack
+        Optional<TooltipStylePreset> styleOpt = ResourceLoader.getStyleFor(stack);
+        if (styleOpt.isPresent()) {
+            TooltipStylePreset preset = styleOpt.get();
+            TooltipStyle.Builder builder = new TooltipStyle.Builder();
+
+            // Build style from preset components
+            preset.getPanel().ifPresent(builder::withPanel);
+            preset.getFrame().ifPresent(builder::withFrame);
+            preset.getIcon().ifPresent(builder::withIcon);
+            builder.withEffects(preset.getEffects());
+
+            renderStyle = builder.build();
+        } else {
+            // Fall back to default style if no specific style matches
+            renderStyle = StyleManager.getInstance().getDefaultStyle();
+        }
     }
 
     /**

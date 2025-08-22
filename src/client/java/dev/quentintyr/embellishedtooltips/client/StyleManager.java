@@ -21,9 +21,14 @@ import java.util.Map;
 public class StyleManager {
     private static StyleManager instance;
 
-    // Default style components (matching original mod values)
-    public static final TooltipPanel DEFAULT_PANEL = new ColorRectPanel(-267386864, -267386864, 1347420415, 1344798847,
-            553648127);
+    // Default style components (high-contrast visible colors for debugging)
+    public static final TooltipPanel DEFAULT_PANEL = new ColorRectPanel(
+            0xF0000000, // Background top - opaque black
+            0xF0333333, // Background bottom - dark gray  
+            0xFFFFFFFF, // Border top - white border for visibility
+            0xFFAAAAAA, // Border bottom - light gray border
+            0x80FFFF00  // Slot highlight - yellow with transparency
+    );
     public static final TooltipFrame DEFAULT_FRAME = new TooltipFrame() {
         @Override
         public void render(TooltipContext context, Vec2f pos, Point size) {
