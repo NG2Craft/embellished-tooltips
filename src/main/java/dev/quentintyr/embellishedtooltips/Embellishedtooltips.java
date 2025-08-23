@@ -5,7 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class EmbellishedTooltips implements ModInitializer {
-    public static final String MODID = "embellished_tooltips";
+    // Must match the "id" in fabric.mod.json and asset namespaces
+    public static final String MODID = "embellished-tooltips";
     public static final Logger LOGGER = LogManager.getLogger("EmbellishedTooltips");
 
     @Override

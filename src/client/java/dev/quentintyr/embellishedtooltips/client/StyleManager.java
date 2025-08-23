@@ -9,6 +9,7 @@ import dev.quentintyr.embellishedtooltips.client.style.panel.TooltipPanel;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
 import dev.quentintyr.embellishedtooltips.client.style.frame.TooltipFrame;
 import dev.quentintyr.embellishedtooltips.client.style.icon.TooltipIcon;
+import dev.quentintyr.embellishedtooltips.client.style.icon.StaticIcon;
 import dev.quentintyr.embellishedtooltips.client.style.panel.ColorRectPanel;
 
 import java.util.HashMap;
@@ -24,10 +25,10 @@ public class StyleManager {
     // Default style components (high-contrast visible colors for debugging)
     public static final TooltipPanel DEFAULT_PANEL = new ColorRectPanel(
             0xF0000000, // Background top - opaque black
-            0xF0333333, // Background bottom - dark gray  
+            0xF0333333, // Background bottom - dark gray
             0xFFFFFFFF, // Border top - white border for visibility
             0xFFAAAAAA, // Border bottom - light gray border
-            0x80FFFF00  // Slot highlight - yellow with transparency
+            0x80FFFF00 // Slot highlight - yellow with transparency
     );
     public static final TooltipFrame DEFAULT_FRAME = new TooltipFrame() {
         @Override
@@ -35,7 +36,7 @@ public class StyleManager {
             // Empty default frame
         }
     };
-    public static final TooltipIcon DEFAULT_ICON = null; // Will be DescentSimpleIcon when implemented
+    public static final TooltipIcon DEFAULT_ICON = new StaticIcon();
 
     // Registry of named styles
     private final Map<String, TooltipStyle> styles = new HashMap<>();

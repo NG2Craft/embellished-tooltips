@@ -142,6 +142,16 @@ public final class TooltipsRegistry {
 
     // Register aliases for backward compatibility with obscure_tooltips namespace
     static {
+        // Aliases for our own namespace variants (hyphen vs underscore)
+        PANELS.put(new Identifier("embellished_tooltips", "color_rect"), PANEL_COLOR_RECT);
+        FRAMES.put(new Identifier("embellished_tooltips", "texture"), FRAME_TEXTURE);
+        FRAMES.put(new Identifier("embellished_tooltips", "bones"), FRAME_BONES);
+        ICONS.put(new Identifier("embellished_tooltips", "static"), ICON_STATIC);
+        ICONS.put(new Identifier("embellished_tooltips", "descent_simple"), ICON_DESCENT_SIMPLE);
+        ICONS.put(new Identifier("embellished_tooltips", "descent_complex"), ICON_DESCENT_COMPLEX);
+        ICONS.put(new Identifier("embellished_tooltips", "descent_shine"), ICON_DESCENT_SHINE);
+        ICONS.put(new Identifier("embellished_tooltips", "constant_rotation"), ICON_CONSTANT_ROTATION);
+
         // Panel aliases
         PANELS.put(new Identifier("obscure_tooltips", "color_rect"), PANEL_COLOR_RECT);
         PANELS.put(new Identifier("obscure_tooltips", "golden"), PANEL_COLOR_RECT);

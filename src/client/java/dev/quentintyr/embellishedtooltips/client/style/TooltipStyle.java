@@ -40,7 +40,6 @@ public final class TooltipStyle {
      */
     public void renderBack(TooltipContext renderer, Vec2f pos, Point size, boolean slot) {
         renderer.pose().push();
-        renderer.pose().translate(0.0F, 0.0F, -50.0F);
         if (this.PANEL != null) {
             this.PANEL.render(renderer, pos, size, slot);
         }
@@ -57,7 +56,6 @@ public final class TooltipStyle {
     public void renderFront(TooltipContext renderer, Vec2f pos, Point size) {
         // Render frame
         renderer.push(() -> {
-            renderer.translate(0.0F, 0.0F, -50.0F);
             if (this.FRAME != null) {
                 this.FRAME.render(renderer, pos, size);
             }
@@ -75,6 +73,22 @@ public final class TooltipStyle {
     }
 
     /**
+     * Renders effects assigned to a given layer.
+     */
+    public void renderEffects(Effects layer, TooltipContext renderer, Vec2f pos, Point size) {
+        if (this.EFFECTS == null || this.EFFECTS.isEmpty())
+            return;
+        for (TooltipEffect effect : this.EFFECTS) {
+            if (effect != null && effect.getLayer() == layer) {
+                try {
+                    effect.render(renderer, pos, size, true);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    /**
      * Resets the style state.
      */
     public void reset() {
@@ -84,7 +98,12 @@ public final class TooltipStyle {
             FRAME.reset();
         if (ICON != null)
             ICON.reset();
-        // Effects reset will be implemented when effects are added
+        if (EFFECTS != null) {
+            for (TooltipEffect e : EFFECTS) {
+                if (e != null)
+                    e.reset();
+            }
+        }
     }
 
     /**

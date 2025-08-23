@@ -130,13 +130,13 @@ public class ResourceLoader implements SimpleSynchronousResourceReloadListener {
      */
     private void sort() {
         List<Identifier> presets = PRESETS_KEYS.stream()
-                .sorted(Comparator.comparingInt(key -> PRESETS.get(key).getLeft().priority))
+                .sorted(Comparator.comparingInt((Identifier key) -> PRESETS.get(key).getLeft().priority).reversed())
                 .toList();
         PRESETS_KEYS.clear();
         PRESETS_KEYS.addAll(presets);
 
         List<Identifier> styles = STYLES_KEYS.stream()
-                .sorted(Comparator.comparingInt(key -> STYLES.get(key).getLeft().priority))
+                .sorted(Comparator.comparingInt((Identifier key) -> STYLES.get(key).getLeft().priority).reversed())
                 .toList();
         STYLES_KEYS.clear();
         STYLES_KEYS.addAll(styles);
@@ -253,20 +253,38 @@ public class ResourceLoader implements SimpleSynchronousResourceReloadListener {
         }
     }
 
+    private static <T> T getWithAliases(Map<Identifier, T> map, String idString) {
+        try {
+            Identifier id = new Identifier(idString);
+            T value = map.get(id);
+            if (value != null)
+                return value;
+            // Try swapping hyphen/underscore in namespace to tolerate inconsistent assets
+            String ns = id.getNamespace();
+            String altNs = ns.contains("-") ? ns.replace('-', '_') : ns.replace('_', '-');
+            Identifier alt = new Identifier(altNs, id.getPath());
+            return map.get(alt);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
      * Parse a preset from JSON.
      */
     private Optional<Pair<StyleFilter, TooltipStylePreset>> parsePreset(Identifier id, JsonObject json) {
         try {
-            // TODO: Implement StyleFilter parsing
-            StyleFilter filter = new StyleFilter(); // Placeholder
+            // Parse optional filter; default (no predicates) matches everything
+            StyleFilter filter = json.has("filter") && json.get("filter").isJsonObject()
+                    ? StyleFilter.fromJson(json.getAsJsonObject("filter"))
+                    : new StyleFilter();
 
             // Parse the preset components
             TooltipStylePreset.Builder builder = new TooltipStylePreset.Builder();
 
             if (json.has("panel")) {
                 String panelId = json.get("panel").getAsString();
-                TooltipPanel panel = PANELS.get(new Identifier(panelId));
+                TooltipPanel panel = getWithAliases(PANELS, panelId);
                 if (panel != null) {
                     builder.withPanel(panel);
                 }
@@ -274,7 +292,7 @@ public class ResourceLoader implements SimpleSynchronousResourceReloadListener {
 
             if (json.has("frame")) {
                 String frameId = json.get("frame").getAsString();
-                TooltipFrame frame = FRAMES.get(new Identifier(frameId));
+                TooltipFrame frame = getWithAliases(FRAMES, frameId);
                 if (frame != null) {
                     builder.withFrame(frame);
                 }
@@ -282,7 +300,7 @@ public class ResourceLoader implements SimpleSynchronousResourceReloadListener {
 
             if (json.has("icon")) {
                 String iconId = json.get("icon").getAsString();
-                TooltipIcon icon = ICONS.get(new Identifier(iconId));
+                TooltipIcon icon = getWithAliases(ICONS, iconId);
                 if (icon != null) {
                     builder.withIcon(icon);
                 }

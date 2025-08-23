@@ -75,6 +75,17 @@ public final class TooltipContext {
     }
 
     /**
+     * Runs a drawing section. Vanilla Forge used a managed section; here we just
+     * run it.
+     */
+    public void drawManaged(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
      * Renders an item with rotation and scale.
      */
     public void renderItem(Vector3f rot, Vector3f scale) {

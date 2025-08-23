@@ -39,7 +39,7 @@ public final class TooltipRenderer {
     private static TooltipStyle renderStyle = null;
     @Nullable
     private static ArmorStandEntity renderStand;
-    private static ItemStack renderStack;
+    private static ItemStack lastStack;
     private static long tooltipStartMillis;
     private static float tooltipSeconds;
 
@@ -61,34 +61,43 @@ public final class TooltipRenderer {
 
         updateStyle(stack);
 
-        System.out.println(
-                "TooltipRenderer: render called, stack=" + (stack.isEmpty() ? "EMPTY" : stack.getItem().toString())
-                        + ", renderStyle=" + (renderStyle != null ? "present" : "null"));
-
         if (renderStyle != null && components != null && !components.isEmpty()) {
             // Calculate tooltip size
             int tooltipWidth = 0;
             int tooltipHeight = 0;
+            final int leftGutter = 26; // like Obscure: space for icon + summary
 
-            for (TooltipComponent component : components) {
+            for (int i = 0; i < components.size(); i++) {
+                TooltipComponent component = components.get(i);
                 int width = component.getWidth(font);
+                if (i == 0)
+                    width += leftGutter; // first line shifted by gutter
                 if (width > tooltipWidth) {
                     tooltipWidth = width;
                 }
                 tooltipHeight += component.getHeight();
 
-                if (component != components.get(components.size() - 1)) {
+                if (i < components.size() - 1) {
                     tooltipHeight += 2; // Gap between components
                 }
             }
 
-            // Add padding
-            tooltipWidth += 8;
-            tooltipHeight += 8;
+            // Include padding
+            tooltipWidth = Math.max(tooltipWidth, leftGutter) + 8;
+            // Extra 13px under first line for summary field spacing
+            tooltipHeight = 14 + tooltipHeight + 8;
 
-            // Get position
-            int posX = x;
-            int posY = y;
+            // Compute clamped position (vanilla-like)
+            int screenW = drawContext.getScaledWindowWidth();
+            int screenH = drawContext.getScaledWindowHeight();
+            int posX = x + 12;
+            if (posX + tooltipWidth > screenW)
+                posX = x - 16 - tooltipWidth;
+            posX = Math.max(4, Math.min(posX, screenW - tooltipWidth - 4));
+            int posY = y - 12;
+            if (posY + tooltipHeight + 6 > screenH)
+                posY = screenH - tooltipHeight - 6;
+            posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
 
             // Create tooltip context
             dev.quentintyr.embellishedtooltips.client.render.TooltipContext context = new dev.quentintyr.embellishedtooltips.client.render.TooltipContext(
@@ -99,22 +108,68 @@ public final class TooltipRenderer {
             Vec2f pos = new Vec2f(posX, posY);
             Point size = new Point(tooltipWidth, tooltipHeight);
 
-            // Render background
-            renderStyle.renderBack(context, pos, size, true);
+            // Default background to ensure panel even if selected style lacks one
+            context.drawManaged(
+                    () -> StyleManager.getInstance().getDefaultStyle().renderBack(context, pos, size, true));
+            // Default background to ensure panel even if selected style lacks one
+            context.drawManaged(
+                    () -> StyleManager.getInstance().getDefaultStyle().renderBack(context, pos, size, true));
+            // Effect/back layers
+            context.drawManaged(() -> renderStyle.renderEffects(
+                    dev.quentintyr.embellishedtooltips.client.style.Effects.BACKGROUND, context, pos, size));
+            context.drawManaged(() -> renderStyle.renderBack(context, pos, size, true));
 
-            // Render text
-            renderText(drawContext, font, components, posX + 4, posY + 4);
+            // Summary/rarity text to the right of icon gutter (forefront of text layer)
+            drawContext.getMatrices().push();
+            drawContext.getMatrices().translate(0, 0, 450.0F);
+            Text rarity = getRarityName(stack);
+            drawContext.drawText(font, rarity, posX + leftGutter, posY + 13, 0xFF4ECDC4, false);
+            drawContext.getMatrices().pop();
 
+            // Between background and text effects
+            context.drawManaged(() -> renderStyle.renderEffects(
+                    dev.quentintyr.embellishedtooltips.client.style.Effects.TEXT_BACKGROUND, context, pos, size));
+
+            // Render text with offset and additional first-line spacing
+            drawContext.getMatrices().push();
+            drawContext.getMatrices().translate(0, 0, 450.0F);
+            renderText(drawContext, font, components, posX + 4, posY + 4, leftGutter);
+            drawContext.getMatrices().pop();
+
+            // Between text and frame effects
+            context.drawManaged(() -> renderStyle.renderEffects(
+                    dev.quentintyr.embellishedtooltips.client.style.Effects.TEXT_FRAME, context, pos, size));
             // Render front (frame, icon)
-            renderStyle.renderFront(context, pos, size);
+            context.drawManaged(() -> renderStyle.renderFront(context, pos, size));
+            // Between frame and icon effects
+            context.drawManaged(() -> renderStyle.renderEffects(
+                    dev.quentintyr.embellishedtooltips.client.style.Effects.FRAME, context, pos, size));
+            // Front effects
+            context.drawManaged(() -> renderStyle
+                    .renderEffects(dev.quentintyr.embellishedtooltips.client.style.Effects.FRONT, context, pos, size));
 
             // Render special cases for armor and tools
             if (stack.getItem() instanceof ArmorItem) {
-                // TODO: Implement armor model rendering
+                Vec2f center = renderSecondPanel(context, pos);
                 equip(stack);
-                renderStand(drawContext, posX + tooltipWidth + 20, posY + tooltipHeight / 2);
+                renderStand(drawContext, (int) (center.x), (int) (center.y + 26));
             } else if (stack.getItem() instanceof ToolItem) {
-                // TODO: Implement tool model rendering
+                Vec2f center = renderSecondPanel(context, pos);
+                // Render a 3D-ish spinning item like Obscure
+                MatrixStack ms = drawContext.getMatrices();
+                ms.push();
+                ms.translate(center.x, center.y, 500.0F);
+                ms.scale(2.75f, 2.75f, 2.75f);
+                ms.multiply(new Quaternionf().rotationX((float) Math.toRadians(-30.0f)));
+                // Spin slowly
+                float spin = (float) (((System.currentTimeMillis() / 1000.0) % 360.0) * Math.toRadians(-20.0));
+                ms.multiply(new Quaternionf().rotationY(spin));
+                ms.multiply(new Quaternionf().rotationZ((float) Math.toRadians(-45.0f)));
+                ms.push();
+                ms.translate(-8.0F, -8.0F, -150.0F);
+                drawContext.drawItem(stack, 0, 0);
+                ms.pop();
+                ms.pop();
             }
 
             return true;
@@ -147,42 +202,95 @@ public final class TooltipRenderer {
                             : TooltipContext.Default.BASIC);
 
             if (!lines.isEmpty()) {
-                // Calculate tooltip size
+                // Calculate tooltip size with left gutter and first-line gap
                 int tooltipWidth = 0;
-                int tooltipHeight = lines.size() * font.fontHeight + (lines.size() - 1) * 2; // 2 pixels between lines
-
                 for (Text line : lines) {
-                    int lineWidth = font.getWidth(line);
-                    if (lineWidth > tooltipWidth) {
-                        tooltipWidth = lineWidth;
-                    }
+                    tooltipWidth = Math.max(tooltipWidth, font.getWidth(line));
                 }
-
-                // Add padding
-                tooltipWidth += 8;
-                tooltipHeight += 8;
+                final int leftGutter = 26;
+                tooltipWidth = Math.max(tooltipWidth, leftGutter) + 8;
+                int tooltipHeight = 14 + (lines.size() * font.fontHeight + (lines.size() - 1) * 2) + 8;
 
                 // Create tooltip context
                 dev.quentintyr.embellishedtooltips.client.render.TooltipContext context = new dev.quentintyr.embellishedtooltips.client.render.TooltipContext(
                         drawContext);
                 context.define(stack, tooltipSeconds);
 
-                // Calculate position and size
-                Vec2f pos = new Vec2f(x, y);
+                // Calculate clamped position and size (vanilla-like)
+                int screenW = drawContext.getScaledWindowWidth();
+                int screenH = drawContext.getScaledWindowHeight();
+                int posX = x + 12;
+                if (posX + tooltipWidth > screenW)
+                    posX = x - 16 - tooltipWidth;
+                posX = Math.max(4, Math.min(posX, screenW - tooltipWidth - 4));
+                int posY = y - 12;
+                if (posY + tooltipHeight + 6 > screenH)
+                    posY = screenH - tooltipHeight - 6;
+                posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+                Vec2f pos = new Vec2f(posX, posY);
                 Point size = new Point(tooltipWidth, tooltipHeight);
 
-                // Render background
-                renderStyle.renderBack(context, pos, size, true);
+                // Default background to ensure panel even if selected style lacks one
+                context.drawManaged(
+                        () -> StyleManager.getInstance().getDefaultStyle().renderBack(context, pos, size, true));
+                // Effects and background
+                context.drawManaged(() -> renderStyle.renderEffects(
+                        dev.quentintyr.embellishedtooltips.client.style.Effects.BACKGROUND, context, pos, size));
+                context.drawManaged(() -> renderStyle.renderBack(context, pos, size, true));
 
-                // Render text
-                int currentY = y + 4;
-                for (Text line : lines) {
-                    drawContext.drawText(font, line, x + 4, currentY, 0xFFFFFFFF, true);
-                    currentY += font.fontHeight + 2;
+                // Rarity summary
+                drawContext.getMatrices().push();
+                drawContext.getMatrices().translate(0, 0, 450.0F);
+                Text rarity = getRarityName(stack);
+                drawContext.drawText(font, rarity, posX + leftGutter, posY + 13, 0xFF4ECDC4, false);
+                drawContext.getMatrices().pop();
+
+                // Between background and text effects
+                context.drawManaged(() -> renderStyle.renderEffects(
+                        dev.quentintyr.embellishedtooltips.client.style.Effects.TEXT_BACKGROUND, context, pos, size));
+
+                // Text
+                drawContext.getMatrices().push();
+                drawContext.getMatrices().translate(0, 0, 450.0F);
+                int currentY = posY + 4;
+                for (int i = 0; i < lines.size(); i++) {
+                    int xOffset = (i == 0) ? leftGutter : 0;
+                    drawContext.drawText(font, lines.get(i), posX + 4 + xOffset, currentY, 0xFFFFFFFF, true);
+                    currentY += font.fontHeight + 2 + (i == 0 ? 13 : 0);
                 }
+                drawContext.getMatrices().pop();
 
-                // Render front (frame, icon)
-                renderStyle.renderFront(context, pos, size);
+                // Between text and frame effects
+                context.drawManaged(() -> renderStyle.renderEffects(
+                        dev.quentintyr.embellishedtooltips.client.style.Effects.TEXT_FRAME, context, pos, size));
+                // Front (frame + icon) and effects
+                context.drawManaged(() -> renderStyle.renderFront(context, pos, size));
+                context.drawManaged(() -> renderStyle.renderEffects(
+                        dev.quentintyr.embellishedtooltips.client.style.Effects.FRAME, context, pos, size));
+                context.drawManaged(() -> renderStyle.renderEffects(
+                        dev.quentintyr.embellishedtooltips.client.style.Effects.FRONT, context, pos, size));
+
+                // Optional model panel when not in handled screens too
+                if (stack.getItem() instanceof ArmorItem) {
+                    Vec2f center = renderSecondPanel(context, pos);
+                    equip(stack);
+                    renderStand(drawContext, (int) (center.x), (int) (center.y + 26));
+                } else if (stack.getItem() instanceof ToolItem) {
+                    Vec2f center = renderSecondPanel(context, pos);
+                    MatrixStack ms = drawContext.getMatrices();
+                    ms.push();
+                    ms.translate(center.x, center.y, 500.0F);
+                    ms.scale(2.75f, 2.75f, 2.75f);
+                    ms.multiply(new org.joml.Quaternionf().rotationX((float) Math.toRadians(-30.0f)));
+                    float spin = (float) (((System.currentTimeMillis() / 1000.0) % 360.0) * Math.toRadians(-20.0));
+                    ms.multiply(new org.joml.Quaternionf().rotationY(spin));
+                    ms.multiply(new org.joml.Quaternionf().rotationZ((float) Math.toRadians(-45.0f)));
+                    ms.push();
+                    ms.translate(-8.0F, -8.0F, -150.0F);
+                    drawContext.drawItem(stack, 0, 0);
+                    ms.pop();
+                    ms.pop();
+                }
 
                 return true;
             }
@@ -191,17 +299,7 @@ public final class TooltipRenderer {
         return false;
     }
 
-    /**
-     * Converts tooltip components to text lines.
-     *
-     * @param components The tooltip components
-     * @return The text lines
-     */
-    private static List<Text> componentsToText(List<TooltipComponent> components) {
-        // This is a placeholder - in practice we'd need to extract text from components
-        // based on their actual implementation
-        return List.of(Text.literal("Item Description"));
-    }
+    // No need to convert components to text; we render components directly
 
     /**
      * Renders the text components of a tooltip.
@@ -213,7 +311,7 @@ public final class TooltipRenderer {
      * @param y           The Y position to render at
      */
     private static void renderText(DrawContext drawContext, TextRenderer font, List<TooltipComponent> components, int x,
-            int y) {
+            int y, int leftGutter) {
         int currentY = y;
 
         // Use the matrix stack and vertex consumers from DrawContext
@@ -225,7 +323,8 @@ public final class TooltipRenderer {
             matrices.push();
 
             // Draw text first
-            component.drawText(font, x, currentY, matrices.peek().getPositionMatrix(), vertexConsumers);
+            int xOffset = component == components.get(0) ? leftGutter : 0;
+            component.drawText(font, x + xOffset, currentY, matrices.peek().getPositionMatrix(), vertexConsumers);
 
             // Draw items
             component.drawItems(font, x, currentY, drawContext);
@@ -233,11 +332,15 @@ public final class TooltipRenderer {
             // Pop matrix state
             matrices.pop();
 
-            currentY += component.getHeight() + 2; // Add spacing between components
+            // Extra 13px spacing after first line to accommodate summary area
+            currentY += component.getHeight() + 2 + (component == components.get(0) ? 13 : 0);
         }
 
         // Ensure all text is rendered
-        vertexConsumers.drawCurrentLayer();
+        try {
+            vertexConsumers.drawCurrentLayer();
+        } catch (Exception ignored) {
+        }
     }
 
     /**
@@ -246,15 +349,17 @@ public final class TooltipRenderer {
      * @param stack The item stack
      */
     private static void updateStyle(ItemStack stack) {
-        // Update the render data
-        renderStack = stack;
-
         // Update tooltip timer
         long currentTimeMillis = System.currentTimeMillis();
-        if (tooltipStartMillis == 0 || stack != renderStack) {
+        boolean stackChanged = (lastStack == null)
+                || (!ItemStack.areEqual(stack, lastStack));
+        if (tooltipStartMillis == 0 || stackChanged) {
             tooltipStartMillis = currentTimeMillis;
         }
         tooltipSeconds = (currentTimeMillis - tooltipStartMillis) / 1000.0F;
+
+        // Track last seen stack after computing change
+        lastStack = stack.copy();
 
         // Get style from ResourceLoader based on the actual ItemStack
         Optional<TooltipStylePreset> styleOpt = ResourceLoader.getStyleFor(stack);
@@ -303,24 +408,52 @@ public final class TooltipRenderer {
         if (renderStand != null) {
             MatrixStack matrixStack = drawContext.getMatrices();
             matrixStack.push();
-            matrixStack.translate(x, y, 200.0F);
-            matrixStack.scale(30.0F, 30.0F, 30.0F);
-            matrixStack.multiply(new Quaternionf().rotationX((float) Math.toRadians(180.0f)));
-            matrixStack.multiply(new Quaternionf().rotationY((float) Math.toRadians(135.0f)));
+            matrixStack.translate(x, y, 500.0F);
+            matrixStack.scale(-30.0F, -30.0F, 30.0F);
+            // Slight tilt and slow spin
+            matrixStack.multiply(new Quaternionf().rotationX((float) Math.toRadians(25.0f)));
+            float spin = (float) (((System.currentTimeMillis() / 1000.0) % 360.0) * Math.toRadians(20.0));
+            matrixStack.multiply(new Quaternionf().rotationY(spin));
 
             // Create a render context
             VertexConsumerProvider.Immediate immediate = MinecraftClient.getInstance().getBufferBuilders()
                     .getEntityVertexConsumers();
 
             // Render the armor stand
-            DiffuseLighting.method_34742();
-            MinecraftClient.getInstance().getEntityRenderDispatcher().render(
-                    renderStand, 0, 0, 0,
-                    0, 0, matrixStack, immediate, 15728880);
-            immediate.draw();
             DiffuseLighting.enableGuiDepthLighting();
+            MinecraftClient.getInstance().getEntityRenderDispatcher().render(renderStand, 0, 0, 0, 0, 1.0f, matrixStack,
+                    immediate, 15728880);
+            immediate.draw();
+            DiffuseLighting.disableGuiDepthLighting();
 
             matrixStack.pop();
         }
+    }
+
+    private static Text getRarityName(ItemStack stack) {
+        try {
+            String rarity = stack.getRarity().name().toLowerCase();
+            // Use translation key consistent with Obscure: rarity.<rarity>.name
+            return Text.translatable("rarity." + rarity + ".name");
+        } catch (Exception e) {
+            return Text.empty();
+        }
+    }
+
+    private static Vec2f renderSecondPanel(dev.quentintyr.embellishedtooltips.client.render.TooltipContext context,
+            Vec2f pos) {
+        float leftX = pos.x - 55.0f;
+        // If this would go off-screen to the left, flip to right side of tooltip
+        if (leftX < 0) {
+            leftX = pos.x + 55.0f;
+        }
+        Vec2f panelPos = new Vec2f(leftX, pos.y);
+
+        context.drawManaged(() -> {
+            if (renderStyle != null) {
+                renderStyle.renderBack(context, panelPos, new Point(30, 60), false);
+            }
+        });
+        return new Vec2f(panelPos.x + 15.0f, panelPos.y + 30.0f);
     }
 }
