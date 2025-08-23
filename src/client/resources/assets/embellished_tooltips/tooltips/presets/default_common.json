@@ -1,0 +1,8 @@
+{
+  "priority": 900,
+  "panel": "embellished-tooltips:silver",
+  "icon": "embellished-tooltips:default",
+  "filter": {
+    "rarity": ["common"]
+  }
+}

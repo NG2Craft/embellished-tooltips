@@ -5,9 +5,7 @@ import dev.quentintyr.embellishedtooltips.client.ResourceLoader;
 import dev.quentintyr.embellishedtooltips.client.StyleManager;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.resource.ResourceType;
-import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.text.Text;
-import net.fabricmc.loader.api.FabricLoader;
+// removed dev-only tooltip marker imports
 import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
 import net.minecraft.client.item.TooltipData;
 import dev.quentintyr.embellishedtooltips.client.tooltip.ProbeTooltipData;
@@ -33,16 +31,7 @@ public class EmbellishedTooltipsClient implements ClientModInitializer {
             return null;
         });
 
-        // Minimal probe to ensure Fabric tooltip event wiring works on this version
-        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-            ItemTooltipCallback.EVENT.register((stack, context, lines) -> {
-                // Append a tiny marker in dev to confirm interception; keep unobtrusive
-                try {
-                    lines.add(Text.literal("§8[ET]"));
-                } catch (Throwable ignored) {
-                }
-            });
-        }
+        // Removed dev-only [ET] marker from tooltips
 
         EmbellishedTooltips.LOGGER.info("Embellished Tooltips client initialized");
     }

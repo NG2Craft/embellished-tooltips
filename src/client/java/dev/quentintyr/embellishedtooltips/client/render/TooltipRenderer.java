@@ -62,10 +62,17 @@ public final class TooltipRenderer {
         updateStyle(stack);
 
         if (renderStyle != null && components != null && !components.isEmpty()) {
+            // Layout constants (tuned to Obscure spacing)
+            final int leftGutter = 21; // flush with slot right edge (27) minus paddingX (6)
+            final int paddingX = 6;
+            final int paddingTop = 4; // align top text with slot background with a small cushion
+            final int paddingBottom = 5; // match slot top offset (now 5px)
+            final int lineGap = 2;
+            final int titleExtra = 13; // gap below first line for rarity summary
+
             // Calculate tooltip size
             int tooltipWidth = 0;
             int tooltipHeight = 0;
-            final int leftGutter = 26; // like Obscure: space for icon + summary
 
             for (int i = 0; i < components.size(); i++) {
                 TooltipComponent component = components.get(i);
@@ -78,14 +85,13 @@ public final class TooltipRenderer {
                 tooltipHeight += component.getHeight();
 
                 if (i < components.size() - 1) {
-                    tooltipHeight += 2; // Gap between components
+                    tooltipHeight += lineGap; // Gap between components
                 }
             }
 
-            // Include padding
-            tooltipWidth = Math.max(tooltipWidth, leftGutter) + 8;
-            // Extra 13px under first line for summary field spacing
-            tooltipHeight = 14 + tooltipHeight + 8;
+            // Include padding and extra gap under title
+            tooltipWidth = Math.max(tooltipWidth, leftGutter) + paddingX * 2;
+            tooltipHeight = paddingTop + tooltipHeight + paddingBottom + titleExtra;
 
             // Compute clamped position (vanilla-like)
             int screenW = drawContext.getScaledWindowWidth();
@@ -120,7 +126,10 @@ public final class TooltipRenderer {
             drawContext.getMatrices().push();
             drawContext.getMatrices().translate(0, 0, 450.0F);
             Text rarity = getRarityName(stack);
-            drawContext.drawText(font, rarity, posX + leftGutter, posY + 13, 0xFF4ECDC4, false);
+            int rarityColor = getRarityColor(stack);
+            int rarityY = posY + paddingTop + font.fontHeight + 1;
+            // Align rarity with the same left padding as text content
+            drawContext.drawText(font, rarity, posX + paddingX + leftGutter, rarityY, rarityColor, false);
             drawContext.getMatrices().pop();
 
             // Between background and text effects
@@ -130,7 +139,7 @@ public final class TooltipRenderer {
             // Render text with offset and additional first-line spacing
             drawContext.getMatrices().push();
             drawContext.getMatrices().translate(0, 0, 450.0F);
-            renderText(drawContext, font, components, posX + 4, posY + 4, leftGutter);
+            renderText(drawContext, font, components, posX + paddingX, posY + paddingTop, leftGutter);
             drawContext.getMatrices().pop();
 
             // Between text and frame effects
@@ -199,14 +208,29 @@ public final class TooltipRenderer {
                             : TooltipContext.Default.BASIC);
 
             if (!lines.isEmpty()) {
-                // Calculate tooltip size with left gutter and first-line gap
-                int tooltipWidth = 0;
-                for (Text line : lines) {
-                    tooltipWidth = Math.max(tooltipWidth, font.getWidth(line));
+                // Layout constants (mirror main path)
+                final int leftGutter = 24; // flush alignment with slot
+                final int paddingX = 6;
+                final int paddingTop = 6;
+                final int paddingBottom = 5; // match slot top offset (now 5px)
+                final int lineGap = 2;
+                final int titleExtra = 13;
+
+                // Calculate tooltip size with left gutter on first line and include rarity
+                // width
+                int contentWidth = 0;
+                for (int i = 0; i < lines.size(); i++) {
+                    int width = font.getWidth(lines.get(i));
+                    if (i == 0)
+                        width += leftGutter; // first line shifts by gutter
+                    contentWidth = Math.max(contentWidth, width);
                 }
-                final int leftGutter = 26;
-                tooltipWidth = Math.max(tooltipWidth, leftGutter) + 8;
-                int tooltipHeight = 14 + (lines.size() * font.fontHeight + (lines.size() - 1) * 2) + 8;
+                // Include rarity summary width aligned to content start
+                Text rarity2 = getRarityName(stack);
+                contentWidth = Math.max(contentWidth, leftGutter + font.getWidth(rarity2));
+                int tooltipWidth = Math.max(contentWidth, leftGutter) + paddingX * 2;
+                int contentHeight = lines.size() * font.fontHeight + Math.max(0, lines.size() - 1) * lineGap;
+                int tooltipHeight = paddingTop + contentHeight + paddingBottom + titleExtra;
 
                 // Create tooltip context
                 dev.quentintyr.embellishedtooltips.client.render.TooltipContext context = new dev.quentintyr.embellishedtooltips.client.render.TooltipContext(
@@ -239,7 +263,10 @@ public final class TooltipRenderer {
                 drawContext.getMatrices().push();
                 drawContext.getMatrices().translate(0, 0, 450.0F);
                 Text rarity = getRarityName(stack);
-                drawContext.drawText(font, rarity, posX + leftGutter, posY + 13, 0xFF4ECDC4, false);
+                int rarityColor = getRarityColor(stack);
+                int rarityY = posY + paddingTop + font.fontHeight + 1;
+                // Align rarity with the same left padding as text content
+                drawContext.drawText(font, rarity, posX + paddingX + leftGutter, rarityY, rarityColor, false);
                 drawContext.getMatrices().pop();
 
                 // Between background and text effects
@@ -249,11 +276,11 @@ public final class TooltipRenderer {
                 // Text
                 drawContext.getMatrices().push();
                 drawContext.getMatrices().translate(0, 0, 450.0F);
-                int currentY = posY + 4;
+                int currentY = posY + paddingTop;
                 for (int i = 0; i < lines.size(); i++) {
                     int xOffset = (i == 0) ? leftGutter : 0;
-                    drawContext.drawText(font, lines.get(i), posX + 4 + xOffset, currentY, 0xFFFFFFFF, true);
-                    currentY += font.fontHeight + 2 + (i == 0 ? 13 : 0);
+                    drawContext.drawText(font, lines.get(i), posX + paddingX + xOffset, currentY, 0xFFFFFFFF, true);
+                    currentY += font.fontHeight + lineGap + (i == 0 ? titleExtra : 0);
                 }
                 drawContext.getMatrices().pop();
 
@@ -309,6 +336,8 @@ public final class TooltipRenderer {
      */
     private static void renderText(DrawContext drawContext, TextRenderer font, List<TooltipComponent> components, int x,
             int y, int leftGutter) {
+        final int lineGap = 2;
+        final int titleExtra = 13;
         int currentY = y;
 
         // Use the matrix stack and vertex consumers from DrawContext
@@ -323,14 +352,14 @@ public final class TooltipRenderer {
             int xOffset = component == components.get(0) ? leftGutter : 0;
             component.drawText(font, x + xOffset, currentY, matrices.peek().getPositionMatrix(), vertexConsumers);
 
-            // Draw items
-            component.drawItems(font, x, currentY, drawContext);
+            // Draw items at the same x so glyph and item components align
+            component.drawItems(font, x + xOffset, currentY, drawContext);
 
             // Pop matrix state
             matrices.pop();
 
-            // Extra 13px spacing after first line to accommodate summary area
-            currentY += component.getHeight() + 2 + (component == components.get(0) ? 13 : 0);
+            // Extra spacing after first line to accommodate summary area
+            currentY += component.getHeight() + lineGap + (component == components.get(0) ? titleExtra : 0);
         }
 
         // Ensure all text is rendered
@@ -435,6 +464,22 @@ public final class TooltipRenderer {
         } catch (Exception e) {
             return Text.empty();
         }
+    }
+
+    private static int getRarityColor(ItemStack stack) {
+        try {
+            // Darker gray for common to match Obscure look
+            if ("common".equalsIgnoreCase(stack.getRarity().name())) {
+                return 0xFF6A6A6A;
+            }
+            var formatting = stack.getRarity().formatting;
+            if (formatting != null && formatting.getColorValue() != null) {
+                return 0xFF000000 | formatting.getColorValue();
+            }
+        } catch (Exception ignored) {
+        }
+        // Default to a soft dark gray for Common
+        return 0xFF7A7A7A;
     }
 
     private static Vec2f renderSecondPanel(dev.quentintyr.embellishedtooltips.client.render.TooltipContext context,

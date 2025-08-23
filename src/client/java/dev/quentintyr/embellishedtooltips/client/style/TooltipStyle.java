@@ -63,7 +63,9 @@ public final class TooltipStyle {
 
         // Render icon
         renderer.push(() -> {
-            renderer.translate(pos.x + 12.0F, pos.y + 12.0F, 500.0F);
+            // Center the 16x16 icon inside the ~22x20 slot background
+            // Shift further down/right to match moved slot background (1px more down)
+            renderer.translate(pos.x + 16F, pos.y + 16.0F, 500.0F);
             renderer.push(() -> {
                 if (this.ICON != null) {
                     this.ICON.render(renderer, -8, -8);

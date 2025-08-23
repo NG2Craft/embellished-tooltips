@@ -22,13 +22,13 @@ import java.util.Map;
 public class StyleManager {
     private static StyleManager instance;
 
-    // Default style components (high-contrast visible colors for debugging)
+    // Default style components (match Obscure's silver panel defaults)
     public static final TooltipPanel DEFAULT_PANEL = new ColorRectPanel(
-            0xF0000000, // Background top - opaque black
-            0xF0333333, // Background bottom - dark gray
-            0xFFFFFFFF, // Border top - white border for visibility
-            0xFFAAAAAA, // Border bottom - light gray border
-            0x80FFFF00 // Slot highlight - yellow with transparency
+            0xF0100010, // back_top_color
+            0xF0100010, // back_bottom_color
+            0x80BBBBCC, // border_top_color
+            0x60606070, // border_bottom_color
+            0x20FFFFFF // slot_color (semi-opaque light square)
     );
     public static final TooltipFrame DEFAULT_FRAME = new TooltipFrame() {
         @Override

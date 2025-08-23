@@ -48,9 +48,10 @@ public class ColorRectPanel implements TooltipPanel {
         if (slot) {
             context.push(() -> {
                 context.translate(0.0F, 0.0F, 400.0F);
-                context.fillGradient(x + 2, y + 1, 20, 1, SLOT, SLOT);
-                context.fillGradient(x + 1, y + 2, 22, 20, SLOT, SLOT);
-                context.fillGradient(x + 2, y + 22, 20, 1, SLOT, SLOT);
+                // shift the slot 3px down/right to add buffer from panel borders
+                context.fillGradient(x + 6, y + 5, 20, 1, SLOT, SLOT); // top
+                context.fillGradient(x + 5, y + 6, 22, 20, SLOT, SLOT); // body
+                context.fillGradient(x + 6, y + 26, 20, 1, SLOT, SLOT); // bottom
             });
         }
     }
