@@ -1,5 +1,7 @@
 {
   "priority": 1000,
+  "panel": "embellished-tooltips:silver",
+  "frame": "embellished-tooltips:silver",
   "icon": "embellished-tooltips:rare",
   "filter": {
     "rarity": [ "uncommon" ]

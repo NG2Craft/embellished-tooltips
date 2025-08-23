@@ -4,7 +4,8 @@
   "filter": {
     "items": [
       "minecraft:ender_pearl",
-      "minecraft:ender_eye"
+      "minecraft:ender_eye",
+      "minecraft:end_crystal"
     ]
   }
 }

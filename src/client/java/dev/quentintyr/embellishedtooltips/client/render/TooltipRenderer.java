@@ -111,9 +111,6 @@ public final class TooltipRenderer {
             // Default background to ensure panel even if selected style lacks one
             context.drawManaged(
                     () -> StyleManager.getInstance().getDefaultStyle().renderBack(context, pos, size, true));
-            // Default background to ensure panel even if selected style lacks one
-            context.drawManaged(
-                    () -> StyleManager.getInstance().getDefaultStyle().renderBack(context, pos, size, true));
             // Effect/back layers
             context.drawManaged(() -> renderStyle.renderEffects(
                     dev.quentintyr.embellishedtooltips.client.style.Effects.BACKGROUND, context, pos, size));
@@ -442,18 +439,22 @@ public final class TooltipRenderer {
 
     private static Vec2f renderSecondPanel(dev.quentintyr.embellishedtooltips.client.render.TooltipContext context,
             Vec2f pos) {
-        float leftX = pos.x - 55.0f;
+        float leftX = pos.x - 65.0f;
         // If this would go off-screen to the left, flip to right side of tooltip
         if (leftX < 0) {
-            leftX = pos.x + 55.0f;
+            leftX = pos.x + 65.0f;
         }
         Vec2f panelPos = new Vec2f(leftX, pos.y);
 
         context.drawManaged(() -> {
+            Point panelSize = new Point(36, 72);
+            // If style has no panel, draw default panel to ensure visibility
             if (renderStyle != null) {
-                renderStyle.renderBack(context, panelPos, new Point(30, 60), false);
+                renderStyle.renderBack(context, panelPos, panelSize, false);
             }
+            // Always ensure a visible panel backdrop
+            StyleManager.getInstance().getDefaultStyle().renderBack(context, panelPos, panelSize, false);
         });
-        return new Vec2f(panelPos.x + 15.0f, panelPos.y + 30.0f);
+        return new Vec2f(panelPos.x + 18.0f, panelPos.y + 36.0f);
     }
 }
