@@ -117,17 +117,43 @@ public final class TooltipRenderer {
             tooltipWidth = Math.max(tooltipWidth, leftGutter) + paddingX * 2;
             tooltipHeight = paddingTop + tooltipHeight + paddingBottom + titleExtra;
 
-            // Compute clamped position (vanilla-like)
             int screenW = drawContext.getScaledWindowWidth();
             int screenH = drawContext.getScaledWindowHeight();
-            int posX = x + 12;
-            if (posX + tooltipWidth > screenW)
-                posX = x - 16 - tooltipWidth;
-            posX = Math.max(4, Math.min(posX, screenW - tooltipWidth - 4));
-            int posY = y - 12;
-            if (posY + tooltipHeight + 6 > screenH)
-                posY = screenH - tooltipHeight - 6;
-            posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+            int posX;
+            int posY;
+
+            boolean hasSideRender = (stack.getItem() instanceof ArmorItem) || (stack.getItem() instanceof ToolItem);
+            if (hasSideRender) {
+                // Place panel to the right of cursor, tooltip to the right of panel; fallback
+                // to left
+                final int panelWidth = 36;
+                final int gap = 12;
+
+                posY = y - 12;
+                if (posY + tooltipHeight + 6 > screenH)
+                    posY = screenH - tooltipHeight - 6;
+                posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+
+                int panelRightX = x + 12;
+                int posXRight = panelRightX + panelWidth + gap;
+                if (posXRight + tooltipWidth <= screenW - 4) {
+                    posX = posXRight;
+                } else {
+                    posX = x - 16 - tooltipWidth - gap - panelWidth;
+                    if (posX < 4)
+                        posX = 4;
+                }
+            } else {
+                // Vanilla-like clamped tooltip placement
+                posX = x + 12;
+                if (posX + tooltipWidth > screenW)
+                    posX = x - 16 - tooltipWidth;
+                posX = Math.max(4, Math.min(posX, screenW - tooltipWidth - 4));
+                posY = y - 12;
+                if (posY + tooltipHeight + 6 > screenH)
+                    posY = screenH - tooltipHeight - 6;
+                posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+            }
 
             // Reset/start animation timer only when hover begins or stack changes
             beginHoverIfNeeded(stack, !hoveredLastFrame);
@@ -183,11 +209,11 @@ public final class TooltipRenderer {
 
             // Render special cases for armor and tools
             if (stack.getItem() instanceof ArmorItem) {
-                Vec2f center = renderSecondPanel(context, pos);
+                Vec2f center = renderSecondPanel(context, pos, size);
                 equip(stack);
                 renderStand(drawContext, (int) (center.x), (int) (center.y + 26));
             } else if (stack.getItem() instanceof ToolItem) {
-                Vec2f center = renderSecondPanel(context, pos);
+                Vec2f center = renderSecondPanel(context, pos, size);
                 // Render a 3D-ish spinning item like Obscure
                 MatrixStack ms = drawContext.getMatrices();
                 ms.push();
@@ -269,17 +295,42 @@ public final class TooltipRenderer {
                         drawContext);
                 context.define(stack, tooltipSeconds);
 
-                // Calculate clamped position and size (vanilla-like)
                 int screenW = drawContext.getScaledWindowWidth();
                 int screenH = drawContext.getScaledWindowHeight();
-                int posX = x + 12;
-                if (posX + tooltipWidth > screenW)
-                    posX = x - 16 - tooltipWidth;
-                posX = Math.max(4, Math.min(posX, screenW - tooltipWidth - 4));
-                int posY = y - 12;
-                if (posY + tooltipHeight + 6 > screenH)
-                    posY = screenH - tooltipHeight - 6;
-                posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+                int posX;
+                int posY;
+
+                boolean hasSideRender = (stack.getItem() instanceof ArmorItem) || (stack.getItem() instanceof ToolItem);
+                if (hasSideRender) {
+                    // Panel right of cursor, tooltip right of panel; fallback left
+                    final int panelWidth = 36;
+                    final int gap = 12;
+
+                    posY = y - 12;
+                    if (posY + tooltipHeight + 6 > screenH)
+                        posY = screenH - tooltipHeight - 6;
+                    posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+
+                    int panelRightX = x + 12;
+                    int posXRight = panelRightX + panelWidth + gap;
+                    if (posXRight + tooltipWidth <= screenW - 4) {
+                        posX = posXRight;
+                    } else {
+                        posX = x - 16 - tooltipWidth - gap - panelWidth;
+                        if (posX < 4)
+                            posX = 4;
+                    }
+                } else {
+                    // Vanilla-like placement
+                    posX = x + 12;
+                    if (posX + tooltipWidth > screenW)
+                        posX = x - 16 - tooltipWidth;
+                    posX = Math.max(4, Math.min(posX, screenW - tooltipWidth - 4));
+                    posY = y - 12;
+                    if (posY + tooltipHeight + 6 > screenH)
+                        posY = screenH - tooltipHeight - 6;
+                    posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+                }
                 Vec2f pos = new Vec2f(posX, posY);
                 Point size = new Point(tooltipWidth, tooltipHeight);
 
@@ -328,11 +379,11 @@ public final class TooltipRenderer {
 
                 // Optional model panel when not in handled screens too
                 if (stack.getItem() instanceof ArmorItem) {
-                    Vec2f center = renderSecondPanel(context, pos);
+                    Vec2f center = renderSecondPanel(context, pos, size);
                     equip(stack);
                     renderStand(drawContext, (int) (center.x), (int) (center.y + 26));
                 } else if (stack.getItem() instanceof ToolItem) {
-                    Vec2f center = renderSecondPanel(context, pos);
+                    Vec2f center = renderSecondPanel(context, pos, size);
                     MatrixStack ms = drawContext.getMatrices();
                     ms.push();
                     ms.translate(center.x, center.y, 500.0F);
@@ -506,16 +557,18 @@ public final class TooltipRenderer {
     }
 
     private static Vec2f renderSecondPanel(dev.quentintyr.embellishedtooltips.client.render.TooltipContext context,
-            Vec2f pos) {
-        float leftX = pos.x - 65.0f;
-        // If this would go off-screen to the left, flip to right side of tooltip
-        if (leftX < 0) {
-            leftX = pos.x + 65.0f;
-        }
-        Vec2f panelPos = new Vec2f(leftX, pos.y);
+            Vec2f tooltipPos, Point tooltipSize) {
+        // Desired gap between the tooltip box and the side panel
+        final float gap = 6.0f;
+        final Point panelSize = new Point(36, 72);
+
+        // Try to place panel to the left with a 12px gap; if off-screen, place to the
+        // right
+        float leftX = tooltipPos.x - gap - panelSize.x;
+        float placedX = leftX >= 4 ? leftX : tooltipPos.x + tooltipSize.x + gap;
+        Vec2f panelPos = new Vec2f(placedX, tooltipPos.y);
 
         context.drawManaged(() -> {
-            Point panelSize = new Point(36, 72);
             // If style has no panel, draw default panel to ensure visibility
             if (renderStyle != null) {
                 renderStyle.renderBack(context, panelPos, panelSize, false);
@@ -523,6 +576,6 @@ public final class TooltipRenderer {
             // Always ensure a visible panel backdrop
             StyleManager.getInstance().getDefaultStyle().renderBack(context, panelPos, panelSize, false);
         });
-        return new Vec2f(panelPos.x + 18.0f, panelPos.y + 36.0f);
+        return new Vec2f(panelPos.x + panelSize.x / 2.0f, panelPos.y + panelSize.y / 2.0f);
     }
 }
