@@ -39,14 +39,15 @@ public class DescentShineIcon implements TooltipIcon {
         // For now, render the item with rotation and scale
 
         context.push(() -> {
-            context.scale(scale, scale, scale);
-
-            // Item rotation effect
-            float rotation = 360.0F * (1.0F - (float) Math.pow((double) (1.0F - Math.min(1.0F, time * 2.0F)), 3.0D));
+            // Pivot at slot center and apply rotation/scale so it lands centered
+            float t = Math.min(1.0F, time * 2.0F); // 0..1 over first 0.5s
+            float rotation = 360.0F * (1.0F - (float) Math.pow((double) (1.0F - t), 3.0D));
+            if (time >= 0.5F)
+                rotation = 0.0F; // flat after half a second
             Vector3f rotationVec = new Vector3f(0.0F, rotation, 0.0F);
-            Vector3f scaleVec = new Vector3f(1.0F, 1.0F, 1.0F);
+            Vector3f scaleVec = new Vector3f(scale, scale, scale);
 
-            context.translate(x, y, 0.0F);
+            context.translate(x + 8.0F, y + 8.0F, 0.0F);
             context.renderItem(rotationVec, scaleVec);
         });
 

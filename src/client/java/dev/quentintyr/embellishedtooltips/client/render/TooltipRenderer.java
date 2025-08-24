@@ -42,6 +42,30 @@ public final class TooltipRenderer {
     private static ItemStack lastStack;
     private static long tooltipStartMillis;
     private static float tooltipSeconds;
+    // Track whether we rendered a tooltip last frame (for simple hover start
+    // detection)
+    private static boolean hoveredLastFrame;
+    // Track last time we rendered to detect a pause (leaving tooltip) even if our
+    // render method wasn't called to flip hoveredLastFrame
+    private static long lastRenderMillis;
+
+    private static void beginHoverIfNeeded(ItemStack stack, boolean firstFrameThisHover) {
+        long now = System.currentTimeMillis();
+        boolean stackChanged = (lastStack == null) || (!ItemStack.areEqual(stack, lastStack));
+        boolean reenteredByGap = lastRenderMillis == 0L || (now - lastRenderMillis) > 150L;
+        if (firstFrameThisHover || stackChanged || tooltipStartMillis == 0L || reenteredByGap) {
+            tooltipStartMillis = now;
+            if (renderStyle != null) {
+                try {
+                    renderStyle.reset();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        tooltipSeconds = (now - tooltipStartMillis) / 1000.0F;
+        lastStack = stack.copy();
+        lastRenderMillis = now;
+    }
 
     /**
      * Renders a tooltip.
@@ -104,6 +128,9 @@ public final class TooltipRenderer {
             if (posY + tooltipHeight + 6 > screenH)
                 posY = screenH - tooltipHeight - 6;
             posY = Math.max(4, Math.min(posY, screenH - tooltipHeight - 4));
+
+            // Reset/start animation timer only when hover begins or stack changes
+            beginHoverIfNeeded(stack, !hoveredLastFrame);
 
             // Create tooltip context
             dev.quentintyr.embellishedtooltips.client.render.TooltipContext context = new dev.quentintyr.embellishedtooltips.client.render.TooltipContext(
@@ -178,9 +205,11 @@ public final class TooltipRenderer {
                 ms.pop();
             }
 
+            hoveredLastFrame = true;
             return true;
         }
 
+        hoveredLastFrame = false;
         return false;
     }
 
@@ -231,6 +260,9 @@ public final class TooltipRenderer {
                 int tooltipWidth = Math.max(contentWidth, leftGutter) + paddingX * 2;
                 int contentHeight = lines.size() * font.fontHeight + Math.max(0, lines.size() - 1) * lineGap;
                 int tooltipHeight = paddingTop + contentHeight + paddingBottom + titleExtra;
+
+                // Reset/start animation timer only when hover begins or stack changes
+                beginHoverIfNeeded(stack, !hoveredLastFrame);
 
                 // Create tooltip context
                 dev.quentintyr.embellishedtooltips.client.render.TooltipContext context = new dev.quentintyr.embellishedtooltips.client.render.TooltipContext(
@@ -316,10 +348,12 @@ public final class TooltipRenderer {
                     ms.pop();
                 }
 
+                hoveredLastFrame = true;
                 return true;
             }
         }
 
+        hoveredLastFrame = false;
         return false;
     }
 
@@ -375,18 +409,7 @@ public final class TooltipRenderer {
      * @param stack The item stack
      */
     private static void updateStyle(ItemStack stack) {
-        // Update tooltip timer
-        long currentTimeMillis = System.currentTimeMillis();
-        boolean stackChanged = (lastStack == null)
-                || (!ItemStack.areEqual(stack, lastStack));
-        if (tooltipStartMillis == 0 || stackChanged) {
-            tooltipStartMillis = currentTimeMillis;
-        }
-        tooltipSeconds = (currentTimeMillis - tooltipStartMillis) / 1000.0F;
-
-        // Track last seen stack after computing change
-        lastStack = stack.copy();
-
+        // Build/resolve style for the given stack
         // Get style from ResourceLoader based on the actual ItemStack
         Optional<TooltipStylePreset> styleOpt = ResourceLoader.getStyleFor(stack);
         if (styleOpt.isPresent()) {
