@@ -23,6 +23,7 @@ public final class TooltipContext {
     private final DrawContext drawContext;
     private ItemStack stack = ItemStack.EMPTY;
     private float seconds = 0.0F;
+    private boolean justBegan = false;
 
     public TooltipContext(DrawContext drawContext) {
         this.drawContext = drawContext;
@@ -216,5 +217,32 @@ public final class TooltipContext {
      */
     public void mul(Quaternionf quaternion) {
         pose().multiply(quaternion);
+    }
+
+    /**
+     * Marks this context as being on the first frame of a new hover sequence.
+     * Tooling uses this to reset per-hover animations.
+     */
+    public void markJustBegan() {
+        this.justBegan = true;
+    }
+
+    /**
+     * Returns true only on the first frame of a hover after it is marked as begun.
+     * Icons can use this to reset animation state.
+     * 
+     * @return true if the current frame is the first frame of a hover
+     */
+    public boolean justBegan() {
+        return this.justBegan;
+    }
+
+    /**
+     * Clears the "just began" flag after observers have handled the first-frame
+     * work.
+     * Call at the end of a render pass to avoid repeating first-frame logic.
+     */
+    public void clearBeginFlag() {
+        this.justBegan = false;
     }
 }
