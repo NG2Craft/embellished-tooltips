@@ -4,28 +4,36 @@ import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
 import org.joml.Vector3f;
 
 public class DescentComplexIcon implements TooltipIcon {
+    @Override
     public void render(TooltipContext context, int x, int y) {
         float time = context.time();
 
-        // Scale animation similar to DescentSimpleIcon but more complex
+        // Same scale animation as DescentSimpleIcon and DescentShineIcon
         float scale = (double) time < 0.25D
                 ? (1.0F - (float) Math.pow((double) (1.0F - time * 4.0F), 3.0D)) * 1.5F
                 : ((double) time < 0.5D
                         ? 1.5F - (1.0F - (float) Math.pow((double) (1.0F - (time - 0.25F) * 4.0F), 3.0D)) * 0.25F
                         : 1.25F);
 
-        // Rotation animation - starts at 180 degrees, rotates to flat (0) by 0.5s
-        float t = Math.min(1.0F, time * 2.0F);
-        float rotation = 180.0F + 180.0F * (1.0F - (float) Math.pow((double) (1.0F - t), 3.0D));
-        if (time >= 0.5F)
+        // Rotation animation with cubic easing - start upside down and rotate to flat
+        float rotation;
+        if (time >= 0.5F) {
+            // Stay flat after half a second
             rotation = 0.0F;
-
-        Vector3f rotationVec = new Vector3f(0.0F, rotation, 0.0F);
-        Vector3f scaleVec = new Vector3f(scale, scale, scale);
+        } else {
+            // Rotate from 180 degrees to 0 degrees over first 0.5s with cubic easing
+            float t = Math.min(1.0F, time * 2.0F); // 0..1 over first 0.5s
+            float easedT = (1.0F - (float) Math.pow((double) (1.0F - t), 3.0D)); // cubic ease out
+            rotation = 180.0F * (1.0F - easedT); // 180° -> 0°
+        }
 
         context.push(() -> {
-            // Rotate/scale around item center for consistent centering
+            // Centered transformation like other animated icons
             context.translate(x + 8.0F, y + 8.0F, 0.0F);
+
+            Vector3f rotationVec = new Vector3f(0.0F, (float) Math.toRadians(rotation), 0.0F);
+            Vector3f scaleVec = new Vector3f(scale, scale, scale);
+
             context.renderItem(rotationVec, scaleVec);
         });
     }

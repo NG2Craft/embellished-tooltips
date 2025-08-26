@@ -200,8 +200,12 @@ public final class TooltipRenderer {
     private static void beginHoverIfNeeded(ItemStack stack, boolean firstFrameThisHover) {
         long now = System.currentTimeMillis();
         boolean stackChanged = (lastStack == null) || (!ItemStack.areEqual(stack, lastStack));
-        boolean reenteredByGap = lastRenderMillis == 0L || (now - lastRenderMillis) > 150L;
-        if (firstFrameThisHover || stackChanged || tooltipStartMillis == 0L || reenteredByGap) {
+
+        // Reset if we haven't rendered for more than 100ms (indicates user stopped
+        // hovering)
+        boolean hasBeenAway = (now - lastRenderMillis) > 100L;
+
+        if (firstFrameThisHover || stackChanged || tooltipStartMillis == 0L || hasBeenAway) {
             tooltipStartMillis = now;
             if (renderStyle != null) {
                 try {
