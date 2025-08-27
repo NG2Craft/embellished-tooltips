@@ -1,5 +1,6 @@
 package dev.quentintyr.embellishedtooltips.client.style.icon;
 
+import dev.quentintyr.embellishedtooltips.client.config.ModConfig;
 import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
 // TODO: Implement particle system
 // import dev.quentintyr.embellishedtooltips.client.style.particle.SparkleParticle;
@@ -26,14 +27,27 @@ public class DescentShineIcon implements TooltipIcon {
     }
 
     public void render(TooltipContext context, int x, int y) {
-        float time = context.time();
+        ModConfig config = ModConfig.getInstance();
+
+        // If animations are disabled, render static
+        if (!config.animations.enableAnimations) {
+            context.context().drawItem(context.stack(), x, y);
+            return;
+        }
+
+        float time = context.time() * config.animations.animationSpeed;
 
         // Primary scale animation
-        float scale = (double) time < 0.25D
-                ? (1.0F - (float) Math.pow((double) (1.0F - time * 4.0F), 3.0D)) * 1.5F
-                : ((double) time < 0.5D
-                        ? 1.5F - (1.0F - (float) Math.pow((double) (1.0F - (time - 0.25F) * 4.0F), 3.0D)) * 0.25F
-                        : 1.25F);
+        final float scale;
+        if (config.animations.enableIconScaling) {
+            scale = (double) time < 0.25D
+                    ? (1.0F - (float) Math.pow((double) (1.0F - time * 4.0F), 3.0D)) * 1.5F
+                    : ((double) time < 0.5D
+                            ? 1.5F - (1.0F - (float) Math.pow((double) (1.0F - (time - 0.25F) * 4.0F), 3.0D)) * 0.25F
+                            : 1.25F);
+        } else {
+            scale = 1.25F; // Default scale
+        }
 
         // TODO: Implement shine effect rendering once we have proper vertex consumers
         // For now, render the item with rotation and scale
@@ -41,14 +55,18 @@ public class DescentShineIcon implements TooltipIcon {
         context.push(() -> {
             // Pivot at slot center and apply rotation/scale so it lands centered
             float t = Math.min(1.0F, time * 2.0F); // 0..1 over first 0.5s
-            float rotation;
-            if (time >= 0.5F) {
-                // Stay flat after half a second
-                rotation = 0.0F;
+            final float rotation;
+            if (config.animations.enableIconRotation) {
+                if (time >= 0.5F) {
+                    // Stay flat after half a second
+                    rotation = 0.0F;
+                } else {
+                    // Rotate from 180 degrees to 0 degrees over first 0.5s with cubic easing
+                    float easedT = (1.0F - (float) Math.pow((double) (1.0F - t), 3.0D)); // cubic ease out
+                    rotation = 180.0F * (1.0F - easedT); // 180° -> 0°
+                }
             } else {
-                // Rotate from 180 degrees to 0 degrees over first 0.5s with cubic easing
-                float easedT = (1.0F - (float) Math.pow((double) (1.0F - t), 3.0D)); // cubic ease out
-                rotation = 180.0F * (1.0F - easedT); // 180° -> 0°
+                rotation = 0.0F; // Default flat
             }
             Vector3f rotationVec = new Vector3f(0.0F, (float) Math.toRadians(rotation), 0.0F);
             Vector3f scaleVec = new Vector3f(scale, scale, scale);
