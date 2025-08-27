@@ -2,6 +2,7 @@ package dev.quentintyr.embellishedtooltips.client.render;
 
 import dev.quentintyr.embellishedtooltips.client.ResourceLoader;
 import dev.quentintyr.embellishedtooltips.client.StyleManager;
+import dev.quentintyr.embellishedtooltips.client.config.ModConfig;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
 
@@ -51,6 +52,13 @@ public final class TooltipRenderer {
             List<TooltipComponent> components, int mouseX, int mouseY,
             TooltipPositioner positioner) {
 
+        // Check if custom tooltips are enabled
+        ModConfig config = ModConfig.getInstance();
+        if (!config.rendering.enableCustomTooltips) {
+            hoveredLastFrame = false;
+            return false;
+        }
+
         updateStyle(stack);
         if (renderStyle == null || components == null || components.isEmpty()) {
             hoveredLastFrame = false;
@@ -58,7 +66,7 @@ public final class TooltipRenderer {
         }
 
         List<TooltipComponent> compsToRender;
-        if (stack.getItem() instanceof ArmorItem && !components.isEmpty()) {
+        if (stack.getItem() instanceof ArmorItem && !components.isEmpty() && config.rendering.enableEnchantmentLines) {
             List<TooltipComponent> list = new ArrayList<>();
             list.add(components.get(0)); // title
             for (Text enchText : buildEnchantmentTexts(stack))
@@ -72,6 +80,14 @@ public final class TooltipRenderer {
     }
 
     public static boolean render(DrawContext ctx, ItemStack stack, int mouseX, int mouseY) {
+        // Check if custom tooltips are enabled
+        ModConfig config = ModConfig.getInstance();
+
+        if (!config.rendering.enableCustomTooltips) {
+            hoveredLastFrame = false;
+            return false;
+        }
+
         updateStyle(stack);
         if (renderStyle == null) {
             hoveredLastFrame = false;
@@ -116,11 +132,13 @@ public final class TooltipRenderer {
 
         beginHoverIfNeeded(stack, !hoveredLastFrame);
 
+        ModConfig config = ModConfig.getInstance();
         final TooltipLayout L = TooltipLayout.defaults();
         final boolean isArmor = stack.getItem() instanceof ArmorItem;
-        final boolean hasSidePanel = isArmor || (stack.getItem() instanceof ToolItem);
+        final boolean hasSidePanel = config.rendering.enableSidePanels
+                && (isArmor || (stack.getItem() instanceof ToolItem));
 
-        int rarityWidth = isArmor ? 0 : font.getWidth(getRarityName(stack));
+        int rarityWidth = (isArmor || !config.rendering.showRarityText) ? 0 : font.getWidth(getRarityName(stack));
         TooltipSize content = renderSource.measure(font, L, isArmor, rarityWidth);
 
         int tooltipWidth = content.widthWithPadding(L);
@@ -138,17 +156,30 @@ public final class TooltipRenderer {
                 ctx);
         etx.define(stack, tooltipSeconds);
 
+        // Apply tooltip scaling
+        MatrixStack ms = ctx.getMatrices();
+        boolean isScaled = config.rendering.tooltipScale != 1.0f;
+        if (isScaled) {
+            ms.push();
+            ms.scale(config.rendering.tooltipScale, config.rendering.tooltipScale, 1.0f);
+            // Adjust position for scaling
+            posVec = new Vec2f(pos.x / config.rendering.tooltipScale, pos.y / config.rendering.tooltipScale);
+            size = new Point((int) (tooltipWidth / config.rendering.tooltipScale),
+                    (int) (tooltipHeight / config.rendering.tooltipScale));
+        }
+
         TooltipStylePipeline.renderStyleRef = renderStyle;
         TooltipStylePipeline.renderBackLayers(etx, posVec, size);
 
-        TooltipSummaryRow.render(
-                ctx, font, stack,
-                pos.x + L.paddingX + L.leftGutter + L.firstLineXOffset,
-                pos.y + L.paddingTop + L.firstLineYOffset + font.fontHeight + 1);
+        if (config.rendering.showStatIcons) {
+            TooltipSummaryRow.render(
+                    ctx, font, stack,
+                    pos.x + L.paddingX + L.leftGutter + L.firstLineXOffset,
+                    pos.y + L.paddingTop + L.firstLineYOffset + font.fontHeight + 1);
+        }
 
         TooltipStylePipeline.renderBetweenTextEffects(etx, posVec, size);
 
-        MatrixStack ms = ctx.getMatrices();
         ms.push();
         ms.translate(0, 0, 450.0F);
         renderSource.renderText(ctx, font, pos.x + L.paddingX, pos.y + L.paddingTop, L);
@@ -158,13 +189,18 @@ public final class TooltipRenderer {
 
         if (hasSidePanel) {
             Vec2f center = TooltipSidePanel.renderSecondPanel(etx, posVec, size, null);
-            if (isArmor) {
+            if (isArmor && config.rendering.enableArmorPreview) {
                 equip(stack);
                 TooltipSidePanel.renderStandRef = renderStand;
                 TooltipSidePanel.renderStand(ctx, (int) center.x, (int) (center.y + 26));
             } else {
                 TooltipSidePanel.renderSpinningItem(ctx, stack, center);
             }
+        }
+
+        // Close scaling transformation if it was applied
+        if (isScaled) {
+            ms.pop();
         }
 
         hoveredLastFrame = true;
@@ -201,9 +237,10 @@ public final class TooltipRenderer {
         long now = System.currentTimeMillis();
         boolean stackChanged = (lastStack == null) || (!ItemStack.areEqual(stack, lastStack));
 
-        // Reset if we haven't rendered for more than 100ms (indicates user stopped
-        // hovering)
-        boolean hasBeenAway = (now - lastRenderMillis) > 100L;
+        // Reset if we haven't rendered for more than the configured timeout (indicates
+        // user stopped hovering)
+        ModConfig config = ModConfig.getInstance();
+        boolean hasBeenAway = (now - lastRenderMillis) > config.animations.reHoverTimeoutMs;
 
         if (firstFrameThisHover || stackChanged || tooltipStartMillis == 0L || hasBeenAway) {
             tooltipStartMillis = now;
