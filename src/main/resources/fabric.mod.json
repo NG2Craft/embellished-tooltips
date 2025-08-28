@@ -19,7 +19,7 @@
 			"dev.quentintyr.embellishedtooltips.EmbellishedTooltips"
 		],
 		"client": [
-			"dev.quentintyr.embellishedtooltips.EmbellishedTooltipsClient"
+			"dev.quentintyr.embellishedtooltips.client.EmbellishedTooltipsClient"
 		]
 	},
 	"mixins": [
