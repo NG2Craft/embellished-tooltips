@@ -4,8 +4,7 @@
 	"compatibilityLevel": "JAVA_17",
 	"client": [
 		"HandledScreenMixin",
-		"GuiGraphicsMixin",
-		"ItemMixin"
+		"GuiGraphicsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
