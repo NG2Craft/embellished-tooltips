@@ -2,10 +2,13 @@ package dev.quentintyr.embellishedtooltips.client.style.icon;
 
 import dev.quentintyr.embellishedtooltips.client.config.ModConfig;
 import dev.quentintyr.embellishedtooltips.client.render.TooltipContext;
-// TODO: Implement particle system
-// import dev.quentintyr.embellishedtooltips.client.style.particle.SparkleParticle;
-// import dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle;
+import dev.quentintyr.embellishedtooltips.client.style.particle.SparkleParticle;
+import dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle;
 import org.joml.Vector3f;
+import net.minecraft.util.math.Vec2f;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DescentShineIcon implements TooltipIcon {
     protected final int CENTER_COLOR;
@@ -13,8 +16,7 @@ public class DescentShineIcon implements TooltipIcon {
     protected final int END_COLOR;
     protected final int PARTICLE_CENTER_COLOR;
     protected final int PARTICLE_EDGE_COLOR;
-    // TODO: Implement particle system
-    // protected final List<TooltipParticle> particles = new ArrayList<>();
+    protected final List<TooltipParticle> particles = new ArrayList<>();
     protected float lastParticle = 0.0F;
 
     public DescentShineIcon(int centerColor, int startColor, int endColor, int particleCenterColor,
@@ -75,20 +77,24 @@ public class DescentShineIcon implements TooltipIcon {
             context.renderItem(rotationVec, scaleVec);
         });
 
-        // TODO: Implement particle effects once particle system is ready
-        /*
-         * if (time - this.lastParticle >= 0.1F) {
-         * this.lastParticle = time;
-         * float particleRotation = (float) (Math.random() * 6.283185307179586D);
-         * this.particles.add(new SparkleParticle(this.PARTICLE_CENTER_COLOR,
-         * this.PARTICLE_EDGE_COLOR, 1.5F,
-         * new Vec2f(0.0F, 0.0F),
-         * new Vec2f((float) Math.cos((double) particleRotation) * 10.0F,
-         * (float) Math.sin((double) particleRotation) * 10.0F)));
-         * }
-         * 
-         * context.renderParticles(this.particles);
-         */
+        // Implement particle effects with config check
+        if (config.animations.enableParticleEffects) {
+            System.out.println("DEBUG: Particles enabled, time=" + time + ", lastParticle=" + this.lastParticle + ", diff=" + (time - this.lastParticle));
+            
+            if (time - this.lastParticle >= 0.1F) {
+                this.lastParticle = time;
+                float particleRotation = (float) (Math.random() * 6.283185307179586D);
+                this.particles.add(new SparkleParticle(this.PARTICLE_CENTER_COLOR,
+                        this.PARTICLE_EDGE_COLOR, 1.5F,
+                        new Vec2f(x + 8.0F, y + 8.0F),
+                        new Vec2f(x + 8.0F + (float) Math.cos((double) particleRotation) * 10.0F,
+                                y + 8.0F + (float) Math.sin((double) particleRotation) * 10.0F)));
+                System.out.println("DEBUG: Spawned particle, total particles: " + this.particles.size());
+            }
+
+            System.out.println("DEBUG: Rendering " + this.particles.size() + " particles");
+            context.renderParticles(this.particles);
+        }
     }
 
     @Override

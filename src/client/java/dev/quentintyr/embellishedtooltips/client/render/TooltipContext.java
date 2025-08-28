@@ -245,4 +245,28 @@ public final class TooltipContext {
     public void clearBeginFlag() {
         this.justBegan = false;
     }
+
+    /**
+     * Renders a list of tooltip particles.
+     * Automatically removes particles that have exceeded their lifetime.
+     */
+    public void renderParticles(
+            java.util.List<dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle> particles) {
+        if (particles.isEmpty()) {
+            return;
+        }
+
+        // Render particles and collect expired ones
+        java.util.Iterator<dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle> iterator = particles
+                .iterator();
+        while (iterator.hasNext()) {
+            dev.quentintyr.embellishedtooltips.client.style.particle.TooltipParticle particle = iterator.next();
+
+            if (particle.shouldRemove()) {
+                iterator.remove();
+            } else {
+                particle.render(this);
+            }
+        }
+    }
 }

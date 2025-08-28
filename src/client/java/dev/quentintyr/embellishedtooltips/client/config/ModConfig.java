@@ -108,7 +108,7 @@ public class ModConfig {
         public boolean enableIconRotation = true;
         public boolean enableIconScaling = true;
         public int reHoverTimeoutMs = 100;
-        public boolean enableParticleEffects = false; // TODO: Enable when particles are implemented
+        public boolean enableParticleEffects = true; // Particle effects for animated tooltips
     }
 
     /**
