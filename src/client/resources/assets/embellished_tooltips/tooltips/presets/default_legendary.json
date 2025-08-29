@@ -1,8 +1,8 @@
 {
   "priority": 1000,
-  "panel": "embellished-tooltips:golden",
-  "frame": "embellished-tooltips:golden",
-  "icon": "embellished-tooltips:epic",
+  "panel": "embellished_tooltips:golden",
+  "frame": "embellished_tooltips:golden",
+  "icon": "embellished_tooltips:epic",
   "filter": {
     "rarity": "legendary"
   }

@@ -1,18 +1,18 @@
 {
 	"schemaVersion": 1,
-	"id": "embellished-tooltips",
+	"id": "embellished_tooltips",
 	"version": "${version}",
-	"name": "embellished-tooltips",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Embellished Tooltips",
+	"description": "Enhanced tooltips with beautiful animations, effects, and customizable styling for Minecraft items.",
 	"authors": [
-		"Me!"
+		"QuentinTyr"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/NG2Craft/embellished-tooltips",
+		"sources": "https://github.com/NG2Craft/embellished-tooltips"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/embellished-tooltips/icon.png",
+	"icon": "assets/embellished_tooltips/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
@@ -23,9 +23,9 @@
 		]
 	},
 	"mixins": [
-		"embellished-tooltips.mixins.json",
+		"embellished_tooltips.mixins.json",
 		{
-			"config": "embellished-tooltips.client.mixins.json",
+			"config": "embellished_tooltips.client.mixins.json",
 			"environment": "client"
 		}
 	],

@@ -1,6 +1,6 @@
 {
   "priority": 1001,
-  "effects": [ "embellished-tooltips:curse" ],
+  "effects": [ "embellished_tooltips:curse" ],
   "filter": {
     "keywords": {
       "any_match": [ "cursed" ]

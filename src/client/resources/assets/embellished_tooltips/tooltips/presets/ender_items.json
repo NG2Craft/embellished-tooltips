@@ -1,6 +1,6 @@
 {
   "priority": 1000,
-  "effects": [ "embellished-tooltips:ender" ],
+  "effects": [ "embellished_tooltips:ender" ],
   "filter": {
     "items": [
       "minecraft:ender_pearl",

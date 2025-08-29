@@ -15,10 +15,20 @@ import java.nio.file.Path;
  * Main configuration class for Embellished Tooltips mod.
  * Handles loading, saving, and managing all mod settings.
  */
+/**
+ * Configuration manager for Embellished Tooltips.
+ * Handles loading, saving, and providing access to all mod settings.
+ * 
+ * Features:
+ * - Hot reloading via in-game commands
+ * - JSON-based configuration with comments
+ * - Grouped settings for easy management
+ * - Backward compatibility with default values
+ */
 public class ModConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger("EmbellishedTooltips/Config");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String CONFIG_FILE_NAME = "embellished-tooltips.json";
+    private static final String CONFIG_FILE_NAME = "embellished_tooltips.json";
 
     private static ModConfig instance;
     private static Path configPath;
