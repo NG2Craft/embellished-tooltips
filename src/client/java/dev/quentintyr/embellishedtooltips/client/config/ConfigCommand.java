@@ -83,16 +83,6 @@ public class ConfigCommand {
                                                             "Custom tooltips " + (value ? "enabled" : "disabled")));
                                                     return 1;
                                                 })))
-                                .then(ClientCommandManager.literal("sidepanels")
-                                        .then(ClientCommandManager.argument("value", BoolArgumentType.bool())
-                                                .executes(context -> {
-                                                    boolean value = BoolArgumentType.getBool(context, "value");
-                                                    ModConfig.getInstance().rendering.enableSidePanels = value;
-                                                    ModConfig.getInstance().save();
-                                                    context.getSource().sendFeedback(Text.literal(
-                                                            "Side panels " + (value ? "enabled" : "disabled")));
-                                                    return 1;
-                                                })))
                                 .then(ClientCommandManager.literal("enchantments")
                                         .then(ClientCommandManager.argument("value", BoolArgumentType.bool())
                                                 .executes(context -> {
@@ -121,6 +111,16 @@ public class ConfigCommand {
                                                     ModConfig.getInstance().save();
                                                     context.getSource().sendFeedback(Text.literal(
                                                             "Armor preview " + (value ? "enabled" : "disabled")));
+                                                    return 1;
+                                                })))
+                                .then(ClientCommandManager.literal("tools")
+                                        .then(ClientCommandManager.argument("value", BoolArgumentType.bool())
+                                                .executes(context -> {
+                                                    boolean value = BoolArgumentType.getBool(context, "value");
+                                                    ModConfig.getInstance().rendering.enableToolPreviews = value;
+                                                    ModConfig.getInstance().save();
+                                                    context.getSource().sendFeedback(Text.literal(
+                                                            "Tool previews " + (value ? "enabled" : "disabled")));
                                                     return 1;
                                                 })))
                                 .then(ClientCommandManager.literal("scale")
@@ -192,9 +192,9 @@ public class ConfigCommand {
                                     context.getSource().sendFeedback(
                                             Text.literal("  Enabled: " + config.rendering.enableCustomTooltips));
                                     context.getSource().sendFeedback(
-                                            Text.literal("  Side Panels: " + config.rendering.enableSidePanels));
-                                    context.getSource().sendFeedback(
                                             Text.literal("  Armor Preview: " + config.rendering.enableArmorPreview));
+                                    context.getSource().sendFeedback(
+                                            Text.literal("  Tool Previews: " + config.rendering.enableToolPreviews));
                                     context.getSource().sendFeedback(
                                             Text.literal("  Enchantments: " + config.rendering.enableEnchantmentLines));
                                     context.getSource().sendFeedback(

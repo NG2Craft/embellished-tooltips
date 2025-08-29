@@ -126,8 +126,8 @@ public class ModConfig {
      */
     public static class RenderingConfig {
         public boolean enableCustomTooltips = true;
-        public boolean enableSidePanels = true;
         public boolean enableArmorPreview = true;
+        public boolean enableToolPreviews = true;  // New option for tool side panels
         public boolean enableEnchantmentLines = true;
         public boolean showStatIcons = true;
         public boolean showRarityText = true;

@@ -135,8 +135,13 @@ public final class TooltipRenderer {
         ModConfig config = ModConfig.getInstance();
         final TooltipLayout L = TooltipLayout.defaults();
         final boolean isArmor = stack.getItem() instanceof ArmorItem;
-        final boolean hasSidePanel = config.rendering.enableSidePanels
-                && (isArmor || (stack.getItem() instanceof ToolItem));
+        final boolean isTool = stack.getItem() instanceof ToolItem;
+        
+        // Side panels are shown if:
+        // - For armor: enableArmorPreview is true
+        // - For tools: enableToolPreviews is true
+        final boolean hasSidePanel = (isArmor && config.rendering.enableArmorPreview) || 
+                (isTool && config.rendering.enableToolPreviews);
 
         int rarityWidth = (isArmor || !config.rendering.showRarityText) ? 0 : font.getWidth(getRarityName(stack));
         TooltipSize content = renderSource.measure(font, L, isArmor, rarityWidth);
@@ -189,11 +194,13 @@ public final class TooltipRenderer {
 
         if (hasSidePanel) {
             Vec2f center = TooltipSidePanel.renderSecondPanel(etx, posVec, size, null);
-            if (isArmor && config.rendering.enableArmorPreview) {
+            if (isArmor) {
+                // For armor, show 3D armor preview (enableArmorPreview was already checked)
                 equip(stack);
                 TooltipSidePanel.renderStandRef = renderStand;
                 TooltipSidePanel.renderStand(ctx, (int) center.x, (int) (center.y + 26));
             } else {
+                // For tools, show spinning item preview
                 TooltipSidePanel.renderSpinningItem(ctx, stack, center);
             }
         }
