@@ -15,24 +15,26 @@ import java.util.List;
 
 /**
  * Mixin for DrawContext to intercept tooltip rendering calls.
- * This serves as a fallback for tooltips that aren't caught by HandledScreenMixin.
+ * This serves as a fallback for tooltips that aren't caught by
+ * HandledScreenMixin.
  */
 @Mixin(DrawContext.class)
 public abstract class GuiGraphicsMixin {
 
-    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;)V", 
-            at = @At("HEAD"), cancellable = true)
+    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;)V", at = @At("HEAD"), cancellable = true)
     private void onDrawTooltip(TextRenderer textRenderer, List<TooltipComponent> components, int x, int y,
             TooltipPositioner positioner, CallbackInfo ci) {
-        
-        // Since we don't have access to the ItemStack in this method, we'll use EMPTY as fallback
-        // The HandledScreenMixin should catch item tooltips with proper ItemStack access
+
+        // Since we don't have access to the ItemStack in this method, we'll use EMPTY
+        // as fallback
+        // The HandledScreenMixin should catch item tooltips with proper ItemStack
+        // access
         ItemStack fallbackStack = ItemStack.EMPTY;
 
         // Try to render with our custom system
         if (components != null && !components.isEmpty()) {
             try {
-                if (TooltipRenderer.render((DrawContext) (Object) this, fallbackStack, textRenderer, 
+                if (TooltipRenderer.render((DrawContext) (Object) this, fallbackStack, textRenderer,
                         components, x, y, positioner)) {
                     ci.cancel();
                 }

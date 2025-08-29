@@ -136,11 +136,11 @@ public final class TooltipRenderer {
         final TooltipLayout L = TooltipLayout.defaults();
         final boolean isArmor = stack.getItem() instanceof ArmorItem;
         final boolean isTool = stack.getItem() instanceof ToolItem;
-        
+
         // Side panels are shown if:
         // - For armor: enableArmorPreview is true
         // - For tools: enableToolPreviews is true
-        final boolean hasSidePanel = (isArmor && config.rendering.enableArmorPreview) || 
+        final boolean hasSidePanel = (isArmor && config.rendering.enableArmorPreview) ||
                 (isTool && config.rendering.enableToolPreviews);
 
         int rarityWidth = (isArmor || !config.rendering.showRarityText) ? 0 : font.getWidth(getRarityName(stack));
