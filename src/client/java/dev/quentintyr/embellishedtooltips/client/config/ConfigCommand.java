@@ -246,9 +246,10 @@ public class ConfigCommand {
                                                                                                         context.getSource()
                                                                                                                         .sendFeedback(Text
                                                                                                                                         .literal(
-                                                                                                                                                        "Painting previews " + (value
-                                                                                                                                                                        ? "enabled"
-                                                                                                                                                                        : "disabled")));
+                                                                                                                                                        "Painting previews "
+                                                                                                                                                                        + (value
+                                                                                                                                                                                        ? "enabled"
+                                                                                                                                                                                        : "disabled")));
                                                                                                         return 1;
                                                                                                 })))
                                                                 .then(ClientCommandManager.literal("scale")
