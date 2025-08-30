@@ -6,8 +6,8 @@ import net.minecraft.util.math.Vec2f;
 
 import java.awt.Point;
 
-final class TooltipStylePipeline {
-    static TooltipStyle renderStyleRef;
+public final class TooltipStylePipeline {
+    public static TooltipStyle renderStyleRef;
 
     static void renderBackLayers(dev.quentintyr.embellishedtooltips.client.render.TooltipContext ec, Vec2f pos,
             Point size) {
@@ -20,7 +20,8 @@ final class TooltipStylePipeline {
         }
     }
 
-    static void renderBetweenTextEffects(dev.quentintyr.embellishedtooltips.client.render.TooltipContext ec, Vec2f pos,
+    public static void renderBetweenTextEffects(dev.quentintyr.embellishedtooltips.client.render.TooltipContext ec,
+            Vec2f pos,
             Point size) {
         TooltipStyle s = renderStyleRef;
         if (s != null) {
@@ -29,7 +30,7 @@ final class TooltipStylePipeline {
         }
     }
 
-    static void renderFrontLayers(dev.quentintyr.embellishedtooltips.client.render.TooltipContext ec, Vec2f pos,
+    public static void renderFrontLayers(dev.quentintyr.embellishedtooltips.client.render.TooltipContext ec, Vec2f pos,
             Point size) {
         TooltipStyle s = renderStyleRef;
         if (s != null) {

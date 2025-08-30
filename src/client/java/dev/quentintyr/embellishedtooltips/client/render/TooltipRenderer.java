@@ -3,6 +3,7 @@ package dev.quentintyr.embellishedtooltips.client.render;
 import dev.quentintyr.embellishedtooltips.client.ResourceLoader;
 import dev.quentintyr.embellishedtooltips.client.StyleManager;
 import dev.quentintyr.embellishedtooltips.client.config.ModConfig;
+import dev.quentintyr.embellishedtooltips.client.render.sidepanel.TooltipSidePanel;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
 
@@ -161,7 +162,7 @@ public final class TooltipRenderer {
         int screenW = ctx.getScaledWindowWidth(); // 1.20.1 [1]
         int screenH = ctx.getScaledWindowHeight(); // 1.20.1 [1]
         Point pos = TooltipPlacement.place(mouseX, mouseY, tooltipWidth, tooltipHeight, screenW, screenH, hasSidePanel,
-                36, 12);
+                64, 12);
         Vec2f posVec = new Vec2f(pos.x, pos.y);
         Point size = new Point(tooltipWidth, tooltipHeight);
 
@@ -202,7 +203,8 @@ public final class TooltipRenderer {
         TooltipStylePipeline.renderFrontLayers(etx, posVec, size);
 
         if (hasSidePanel) {
-            Vec2f center = TooltipSidePanel.renderSecondPanel(etx, posVec, size, null);
+            Vec2f center = TooltipSidePanel.renderSecondPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
+                    screenH);
             if (isArmor) {
                 // For armor, show 3D armor preview (enableArmorPreview was already checked)
                 equip(stack);
@@ -329,18 +331,19 @@ public final class TooltipRenderer {
      */
     private static void renderMapPreview(DrawContext ctx, ItemStack stack, Vec2f center) {
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.world == null) return;
-        
+        if (mc.world == null)
+            return;
+
         MatrixStack matrices = ctx.getMatrices();
         matrices.push();
-        
+
         // Center the map preview
         int mapSize = 64; // Size of the map preview
         float x = center.x - mapSize / 2f;
         float y = center.y - mapSize / 2f;
-        
+
         matrices.translate(x, y, 0);
-        
+
         try {
             // Try to get map data and render it
             Integer mapId = FilledMapItem.getMapId(stack);
@@ -361,7 +364,7 @@ public final class TooltipRenderer {
             // Fallback to placeholder if rendering fails
             renderMapPlaceholder(ctx, mapSize);
         }
-        
+
         matrices.pop();
     }
 
@@ -372,26 +375,26 @@ public final class TooltipRenderer {
         // Draw map background
         ctx.fill(0, 0, size, size, 0xFF8B4513); // Brown frame
         ctx.fill(2, 2, size - 2, size - 2, 0xFFF5DEB3); // Map background
-        
+
         // Draw a simplified version of the map data
         if (mapState.colors != null) {
             int mapDataSize = 128; // Minecraft maps are 128x128
             int pixelSize = (size - 4) / 16; // Divide into 16x16 grid for performance
-            
+
             for (int x = 0; x < 16; x++) {
                 for (int y = 0; y < 16; y++) {
                     // Sample the map data at intervals
                     int mapX = (x * mapDataSize) / 16;
                     int mapY = (y * mapDataSize) / 16;
                     int index = mapX + mapY * mapDataSize;
-                    
+
                     if (index < mapState.colors.length) {
                         byte colorIndex = mapState.colors[index];
                         if (colorIndex != 0) {
                             // Convert map color to RGB (simplified)
                             int color = getMapColor(colorIndex);
-                            ctx.fill(2 + x * pixelSize, 2 + y * pixelSize, 
-                                   2 + (x + 1) * pixelSize, 2 + (y + 1) * pixelSize, color);
+                            ctx.fill(2 + x * pixelSize, 2 + y * pixelSize,
+                                    2 + (x + 1) * pixelSize, 2 + (y + 1) * pixelSize, color);
                         }
                     }
                 }
@@ -406,21 +409,22 @@ public final class TooltipRenderer {
         // Simplified color mapping based on Minecraft's map colors
         int baseColor = colorIndex / 4;
         int shade = colorIndex % 4;
-        
+
         int[] baseColors = {
-            0x000000, 0x7FB238, 0xF7E9A3, 0xC7C7C7, 0xFF0000, 0xA0A0FF, 0xA7A7A7, 0x007C00,
-            0xFFFFFF, 0xA4A4A4, 0x740085, 0x0000FF, 0x8B4513, 0xFFFF00, 0xFF00FF, 0x00FF00
+                0x000000, 0x7FB238, 0xF7E9A3, 0xC7C7C7, 0xFF0000, 0xA0A0FF, 0xA7A7A7, 0x007C00,
+                0xFFFFFF, 0xA4A4A4, 0x740085, 0x0000FF, 0x8B4513, 0xFFFF00, 0xFF00FF, 0x00FF00
         };
-        
-        if (baseColor >= baseColors.length) baseColor = 0;
+
+        if (baseColor >= baseColors.length)
+            baseColor = 0;
         int color = baseColors[baseColor];
-        
+
         // Apply shading
         float brightness = 1.0f - (shade * 0.15f);
-        int r = (int)((color >> 16 & 0xFF) * brightness);
-        int g = (int)((color >> 8 & 0xFF) * brightness);
-        int b = (int)((color & 0xFF) * brightness);
-        
+        int r = (int) ((color >> 16 & 0xFF) * brightness);
+        int g = (int) ((color >> 8 & 0xFF) * brightness);
+        int b = (int) ((color & 0xFF) * brightness);
+
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
@@ -431,7 +435,7 @@ public final class TooltipRenderer {
         // Draw a brown square to represent an empty/unknown map
         ctx.fill(0, 0, size, size, 0xFF8B4513); // Brown background
         ctx.fill(2, 2, size - 2, size - 2, 0xFFD2B48C); // Lighter brown interior
-        
+
         // Draw a simple grid pattern
         for (int i = 8; i < size - 8; i += 8) {
             ctx.drawHorizontalLine(4, size - 4, i, 0xFF654321); // Darker brown lines
@@ -445,18 +449,18 @@ public final class TooltipRenderer {
     private static void renderPaintingPreview(DrawContext ctx, ItemStack stack, Vec2f center) {
         MatrixStack matrices = ctx.getMatrices();
         matrices.push();
-        
+
         // Standard painting preview size
         int paintingSize = 48;
         float x = center.x - paintingSize / 2f;
         float y = center.y - paintingSize / 2f;
-        
+
         matrices.translate(x, y, 0);
-        
+
         try {
             // Always render something visible for debugging
             renderPaintingFrame(ctx, paintingSize);
-            
+
             // Try to get the painting variant from the item
             String paintingId = getPaintingIdFromStack(stack);
             if (paintingId != null) {
@@ -468,7 +472,7 @@ public final class TooltipRenderer {
             // Fallback to placeholder
             renderPaintingPlaceholder(ctx, paintingSize);
         }
-        
+
         matrices.pop();
     }
 
@@ -484,7 +488,7 @@ public final class TooltipRenderer {
         } catch (Exception e) {
             // Ignore NBT errors
         }
-        
+
         // Default to a recognizable painting pattern
         return "kebab";
     }
@@ -507,18 +511,22 @@ public final class TooltipRenderer {
         int innerSize = size - 8;
         int startX = 4;
         int startY = 4;
-        
+
         // Create a recognizable pattern based on painting ID
         switch (paintingId.toLowerCase()) {
             case "kebab":
                 // Draw a simple kebab-like pattern
-                ctx.fill(startX + innerSize/4, startY + 2, startX + 3*innerSize/4, startY + innerSize - 2, 0xFF8B4513);
-                ctx.fill(startX + innerSize/3, startY + innerSize/4, startX + 2*innerSize/3, startY + 3*innerSize/4, 0xFFFF0000);
+                ctx.fill(startX + innerSize / 4, startY + 2, startX + 3 * innerSize / 4, startY + innerSize - 2,
+                        0xFF8B4513);
+                ctx.fill(startX + innerSize / 3, startY + innerSize / 4, startX + 2 * innerSize / 3,
+                        startY + 3 * innerSize / 4, 0xFFFF0000);
                 break;
             case "plant":
                 // Draw a plant-like pattern
-                ctx.fill(startX + innerSize/2 - 2, startY + innerSize/2, startX + innerSize/2 + 2, startY + innerSize - 2, 0xFF228B22);
-                ctx.fill(startX + innerSize/4, startY + 2, startX + 3*innerSize/4, startY + innerSize/3, 0xFF32CD32);
+                ctx.fill(startX + innerSize / 2 - 2, startY + innerSize / 2, startX + innerSize / 2 + 2,
+                        startY + innerSize - 2, 0xFF228B22);
+                ctx.fill(startX + innerSize / 4, startY + 2, startX + 3 * innerSize / 4, startY + innerSize / 3,
+                        0xFF32CD32);
                 break;
             case "void":
                 // Draw "The Void" pattern - dark with some highlights
@@ -537,10 +545,10 @@ public final class TooltipRenderer {
                 int color1 = 0xFF000000 | (Math.abs(hash) & 0xFFFFFF);
                 int color2 = 0xFF000000 | (Math.abs(hash >> 8) & 0xFFFFFF);
                 int color3 = 0xFF000000 | (Math.abs(hash >> 16) & 0xFFFFFF);
-                
-                ctx.fill(startX, startY, startX + innerSize, startY + innerSize/3, color1);
-                ctx.fill(startX, startY + innerSize/3, startX + innerSize, startY + 2*innerSize/3, color2);
-                ctx.fill(startX, startY + 2*innerSize/3, startX + innerSize, startY + innerSize, color3);
+
+                ctx.fill(startX, startY, startX + innerSize, startY + innerSize / 3, color1);
+                ctx.fill(startX, startY + innerSize / 3, startX + innerSize, startY + 2 * innerSize / 3, color2);
+                ctx.fill(startX, startY + 2 * innerSize / 3, startX + innerSize, startY + innerSize, color3);
                 break;
         }
     }
@@ -553,10 +561,10 @@ public final class TooltipRenderer {
         int innerSize = size - 8;
         int startX = 4;
         int startY = 4;
-        
+
         // Fill with a neutral color
         ctx.fill(startX, startY, startX + innerSize, startY + innerSize, 0xFFCCCCCC);
-        
+
         // Draw a question mark
         MinecraftClient mc = MinecraftClient.getInstance();
         TextRenderer font = mc.textRenderer;
@@ -564,7 +572,7 @@ public final class TooltipRenderer {
         int textWidth = font.getWidth(questionMark);
         int textX = startX + (innerSize - textWidth) / 2;
         int textY = startY + (innerSize - font.fontHeight) / 2;
-        
+
         ctx.drawText(font, questionMark, textX, textY, 0xFF000000, false);
     }
 }
