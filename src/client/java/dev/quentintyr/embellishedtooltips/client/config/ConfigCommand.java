@@ -213,6 +213,44 @@ public class ConfigCommand {
                                                                                                                                                                         : "disabled")));
                                                                                                         return 1;
                                                                                                 })))
+                                                                .then(ClientCommandManager.literal("maps")
+                                                                                .then(ClientCommandManager.argument(
+                                                                                                "value",
+                                                                                                BoolArgumentType.bool())
+                                                                                                .executes(context -> {
+                                                                                                        boolean value = BoolArgumentType
+                                                                                                                        .getBool(context,
+                                                                                                                                        "value");
+                                                                                                        ModConfig.getInstance().rendering.enableMapPreviews = value;
+                                                                                                        ModConfig.getInstance()
+                                                                                                                        .save();
+                                                                                                        context.getSource()
+                                                                                                                        .sendFeedback(Text
+                                                                                                                                        .literal(
+                                                                                                                                                        "Map previews " + (value
+                                                                                                                                                                        ? "enabled"
+                                                                                                                                                                        : "disabled")));
+                                                                                                        return 1;
+                                                                                                })))
+                                                                .then(ClientCommandManager.literal("paintings")
+                                                                                .then(ClientCommandManager.argument(
+                                                                                                "value",
+                                                                                                BoolArgumentType.bool())
+                                                                                                .executes(context -> {
+                                                                                                        boolean value = BoolArgumentType
+                                                                                                                        .getBool(context,
+                                                                                                                                        "value");
+                                                                                                        ModConfig.getInstance().rendering.enablePaintingPreviews = value;
+                                                                                                        ModConfig.getInstance()
+                                                                                                                        .save();
+                                                                                                        context.getSource()
+                                                                                                                        .sendFeedback(Text
+                                                                                                                                        .literal(
+                                                                                                                                                        "Painting previews " + (value
+                                                                                                                                                                        ? "enabled"
+                                                                                                                                                                        : "disabled")));
+                                                                                                        return 1;
+                                                                                                })))
                                                                 .then(ClientCommandManager.literal("scale")
                                                                                 .then(ClientCommandManager
                                                                                                 .argument("value",
@@ -331,6 +369,12 @@ public class ConfigCommand {
                                                                         context.getSource().sendFeedback(
                                                                                         Text.literal("  Tool Previews: "
                                                                                                         + config.rendering.enableToolPreviews));
+                                                                        context.getSource().sendFeedback(
+                                                                                        Text.literal("  Map Previews: "
+                                                                                                        + config.rendering.enableMapPreviews));
+                                                                        context.getSource().sendFeedback(
+                                                                                        Text.literal("  Painting Previews: "
+                                                                                                        + config.rendering.enablePaintingPreviews));
                                                                         context.getSource().sendFeedback(
                                                                                         Text.literal("  Enchantments: "
                                                                                                         + config.rendering.enableEnchantmentLines));

@@ -128,6 +128,8 @@ public class ModConfig {
         public boolean enableCustomTooltips = true;
         public boolean enableArmorPreview = true;
         public boolean enableToolPreviews = true; // New option for tool side panels
+        public boolean enableMapPreviews = true; // New option for map side panels
+        public boolean enablePaintingPreviews = true; // New option for painting side panels
         public boolean enableEnchantmentLines = true;
         public boolean showStatIcons = true;
         public boolean showRarityText = true;

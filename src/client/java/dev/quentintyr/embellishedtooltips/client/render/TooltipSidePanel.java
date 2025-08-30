@@ -1,6 +1,9 @@
 package dev.quentintyr.embellishedtooltips.client.render;
 
 import dev.quentintyr.embellishedtooltips.client.StyleManager;
+import dev.quentintyr.embellishedtooltips.client.render.sidepanel.ItemRenderer3D;
+import dev.quentintyr.embellishedtooltips.client.render.sidepanel.MapRenderer;
+import dev.quentintyr.embellishedtooltips.client.render.sidepanel.PaintingRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.DiffuseLighting;
@@ -53,18 +56,14 @@ final class TooltipSidePanel {
     }
 
     static void renderSpinningItem(DrawContext ctx, ItemStack stack, Vec2f center) {
-        MatrixStack ms = ctx.getMatrices();
-        ms.push();
-        ms.translate(center.x, center.y, 500.0F);
-        ms.scale(2.75f, 2.75f, 2.75f);
-        ms.multiply(new Quaternionf().rotationX((float) Math.toRadians(-30.0f)));
-        float spin = (float) (((System.currentTimeMillis() / 1000.0) % 360.0) * Math.toRadians(-20.0));
-        ms.multiply(new Quaternionf().rotationY(spin));
-        ms.multiply(new Quaternionf().rotationZ((float) Math.toRadians(-45.0f)));
-        ms.push();
-        ms.translate(-8.0F, -8.0F, -150.0F);
-        ctx.drawItem(stack, 0, 0);
-        ms.pop();
-        ms.pop();
+        ItemRenderer3D.renderSpinningItem(ctx, stack, center);
+    }
+
+    static void renderMapPreview(DrawContext ctx, ItemStack stack, Vec2f center) {
+        MapRenderer.renderMapPreview(ctx, stack, center);
+    }
+
+    static void renderPaintingPreview(DrawContext ctx, ItemStack stack, Vec2f center) {
+        PaintingRenderer.renderPaintingPreview(ctx, stack, center);
     }
 }

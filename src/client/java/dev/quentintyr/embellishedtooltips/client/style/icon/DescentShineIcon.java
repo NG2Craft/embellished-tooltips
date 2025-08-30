@@ -79,8 +79,6 @@ public class DescentShineIcon implements TooltipIcon {
 
         // Implement particle effects with config check
         if (config.animations.enableParticleEffects) {
-            System.out.println("DEBUG: Particles enabled, time=" + time + ", lastParticle=" + this.lastParticle + ", diff=" + (time - this.lastParticle));
-            
             if (time - this.lastParticle >= 0.1F) {
                 this.lastParticle = time;
                 float particleRotation = (float) (Math.random() * 6.283185307179586D);
@@ -89,10 +87,7 @@ public class DescentShineIcon implements TooltipIcon {
                         new Vec2f(x + 8.0F, y + 8.0F),
                         new Vec2f(x + 8.0F + (float) Math.cos((double) particleRotation) * 10.0F,
                                 y + 8.0F + (float) Math.sin((double) particleRotation) * 10.0F)));
-                System.out.println("DEBUG: Spawned particle, total particles: " + this.particles.size());
             }
-
-            System.out.println("DEBUG: Rendering " + this.particles.size() + " particles");
             context.renderParticles(this.particles);
         }
     }
