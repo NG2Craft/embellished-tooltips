@@ -10,6 +10,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec2f;
+import java.awt.Point;
 
 import java.util.Optional;
 
@@ -26,7 +27,7 @@ public final class PaintingRenderer {
      * Attempt to render the painting preview if the stack represents a painting
      * with a variant.
      */
-    public static void renderPaintingPreview(DrawContext ctx, ItemStack stack, Vec2f center) {
+    public static void renderPaintingPreview(DrawContext ctx, ItemStack stack, Vec2f center, Point panelSize) {
         if (stack.isEmpty() || stack.getItem() != Items.PAINTING)
             return;
 
@@ -39,22 +40,43 @@ public final class PaintingRenderer {
         // Fetch the sprite for the painting variant
         Sprite sprite = MinecraftClient.getInstance().getPaintingManager().getPaintingSprite(variant);
 
-        // Compute scaled size preserving aspect ratio within a 56x56 content box
-        int max = 56; // leave a small margin inside the 64x64 panel
+        // Compute scaled size preserving aspect ratio within the panel's inner area
+        int maxW = Math.max(1, panelSize.x - 8);
+        int maxH = Math.max(1, panelSize.y - 8);
         int vw = variant.getWidth(); // blocks
         int vh = variant.getHeight(); // blocks
         // Each block corresponds to 16x16 px on the sprite
         int texW = vw * 16;
         int texH = vh * 16;
-        float scale = Math.min((float) max / texW, (float) max / texH);
+        float scale = Math.min((float) maxW / texW, (float) maxH / texH);
         int drawW = Math.max(1, Math.round(texW * scale));
         int drawH = Math.max(1, Math.round(texH * scale));
 
         int x = Math.round(center.x - drawW / 2f);
-        int y = Math.round(center.y - drawH / 2f) - 1; // nudge up a touch
+        int y = Math.round(center.y - drawH / 2f); // perfect vertical centering
 
         // Bind the painting atlas and draw the sprite
         ctx.drawSprite(x, y, 450, drawW, drawH, sprite);
+    }
+
+    /**
+     * Compute a suitable panel size for the given painting stack:
+     * - Max dimension ~64px; preserves aspect ratio; adds an 8px padding budget.
+     */
+    public static Point computePanelSize(ItemStack stack) {
+        if (stack.isEmpty() || stack.getItem() != Items.PAINTING)
+            return new Point(64, 64);
+        Optional<PaintingVariant> opt = getPaintingVariant(stack);
+        if (opt.isEmpty())
+            return new Point(64, 64);
+        PaintingVariant variant = opt.get();
+        int vw = variant.getWidth() * 16;
+        int vh = variant.getHeight() * 16;
+        int max = 64 - 8; // inner size target; outer panel will add back the padding budget
+        float scale = Math.min((float) max / Math.max(1, vw), (float) max / Math.max(1, vh));
+        int drawW = Math.max(1, Math.round(vw * scale));
+        int drawH = Math.max(1, Math.round(vh * scale));
+        return new Point(drawW + 8, drawH + 8);
     }
 
     /**

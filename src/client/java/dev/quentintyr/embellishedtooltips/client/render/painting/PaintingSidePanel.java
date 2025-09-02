@@ -31,8 +31,8 @@ public final class PaintingSidePanel {
             int screenH,
             boolean isTooltipOnLeft) {
 
-        // Default square panel; the painting will be fit inside with aspect preserved
-        final Point panelSize = new Point(64, 64);
+        // Dynamic panel size based on painting variant; default falls back to ~64x64
+        final Point panelSize = PaintingRenderer.computePanelSize(ec.stack());
 
         float panelX, panelY;
 
@@ -62,6 +62,8 @@ public final class PaintingSidePanel {
      * Draw the painting preview centered inside the panel.
      */
     public static void renderPaintingPreview(DrawContext ctx, ItemStack stack, Vec2f center) {
-        PaintingRenderer.renderPaintingPreview(ctx, stack, center);
+        // Use same dynamic panel sizing here to ensure correct centering
+        Point panelSize = PaintingRenderer.computePanelSize(stack);
+        PaintingRenderer.renderPaintingPreview(ctx, stack, center, panelSize);
     }
 }
