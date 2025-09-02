@@ -11,10 +11,7 @@ public class EmbellishedTooltips implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Initializing Embellished Tooltips");
-
-        // Register common functionality here (if any)
-        // Most of our mod is client-side, so the main initialization happens in
-        // EmbellishedTooltipsClient
+        LOGGER.info("Initializing Embellished Tooltips (common)");
+        // Common setup (if needed). Most functionality is client-side.
     }
 }
