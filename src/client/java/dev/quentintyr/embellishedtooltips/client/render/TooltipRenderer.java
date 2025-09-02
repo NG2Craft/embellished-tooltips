@@ -172,10 +172,10 @@ public final class TooltipRenderer {
             panelWidth = 64; // Maps use 64x64 square panels
         }
         if (isPainting) {
-            // Paintings can vary; compute size and use its width for placement to avoid
+            // Paintings can vary; compute size (hover-aware) for placement to avoid
             // collisions
             java.awt.Point ps = dev.quentintyr.embellishedtooltips.client.render.painting.PaintingRenderer
-                    .computePanelSize(stack);
+                    .computePanelSize(stack, tooltipSeconds);
             panelWidth = Math.max(panelWidth, ps.x);
         }
 
@@ -246,7 +246,7 @@ public final class TooltipRenderer {
                 // For paintings, show painting preview with dynamic sizing
                 Vec2f center = PaintingSidePanel.renderPaintingPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
                         screenH, isTooltipOnLeft);
-                PaintingSidePanel.renderPaintingPreview(ctx, stack, center);
+                PaintingSidePanel.renderPaintingPreview(etx, ctx, stack, center);
             }
         }
 

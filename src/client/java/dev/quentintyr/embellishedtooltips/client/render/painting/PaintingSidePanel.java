@@ -32,7 +32,7 @@ public final class PaintingSidePanel {
             boolean isTooltipOnLeft) {
 
         // Dynamic panel size based on painting variant; default falls back to ~64x64
-        final Point panelSize = PaintingRenderer.computePanelSize(ec.stack());
+        final Point panelSize = PaintingRenderer.computePanelSize(ec.stack(), ec.time());
 
         float panelX, panelY;
 
@@ -61,9 +61,10 @@ public final class PaintingSidePanel {
     /**
      * Draw the painting preview centered inside the panel.
      */
-    public static void renderPaintingPreview(DrawContext ctx, ItemStack stack, Vec2f center) {
+    public static void renderPaintingPreview(dev.quentintyr.embellishedtooltips.client.render.TooltipContext etx,
+            DrawContext ctx, ItemStack stack, Vec2f center) {
         // Use same dynamic panel sizing here to ensure correct centering
         Point panelSize = PaintingRenderer.computePanelSize(stack);
-        PaintingRenderer.renderPaintingPreview(ctx, stack, center, panelSize);
+        PaintingRenderer.renderPaintingPreview(ctx, stack, center, panelSize, etx.time());
     }
 }
