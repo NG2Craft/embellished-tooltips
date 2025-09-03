@@ -6,7 +6,6 @@ import dev.quentintyr.embellishedtooltips.client.config.ModConfig;
 import dev.quentintyr.embellishedtooltips.client.render.item.ItemSidePanel;
 import dev.quentintyr.embellishedtooltips.client.render.map.MapSidePanel;
 import dev.quentintyr.embellishedtooltips.client.render.painting.PaintingSidePanel;
-import dev.quentintyr.embellishedtooltips.client.render.trim.TrimSidePanel;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
 
@@ -25,6 +24,7 @@ import net.minecraft.item.ArmorItem;
 import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.SmithingTemplateItem;
+import dev.quentintyr.embellishedtooltips.client.render.trim.TrimSidePanel;
 import net.minecraft.item.ToolItem;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
@@ -108,6 +108,63 @@ public final class TooltipRenderer {
                                                                                                                    // API
                                                                                                                    // [2]
 
+        // For trim smithing templates, drop only the verbose sections (Applies to /
+        // Ingredients)
+        if (isTrimTemplate(stack) && !lines.isEmpty()) {
+            List<Text> filtered = new ArrayList<>(lines.size());
+            boolean skipNext = false;
+            for (Text t : lines) {
+                if (skipNext) {
+                    skipNext = false;
+                    continue;
+                }
+                boolean isHeader = false;
+                try {
+                    var content = t.getContent();
+                    if (content instanceof net.minecraft.text.TranslatableTextContent trans) {
+                        String key = trans.getKey();
+                        if (key.contains("smithing_template.applies_to")
+                                || key.contains("smithing_template.ingredients")) {
+                            isHeader = true;
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+                if (!isHeader) {
+                    String s = t.getString();
+                    if (s != null) {
+                        String lower = s.toLowerCase();
+                        if (lower.contains("applies to") || lower.contains("ingredients")) {
+                            isHeader = true;
+                        }
+                    }
+                }
+                if (isHeader) {
+                    skipNext = true;
+                    continue;
+                }
+                filtered.add(t);
+            }
+            // Remove blank/whitespace-only lines and cap to the first three non-empty lines
+            List<Text> compact = new ArrayList<>(3);
+            for (Text t : filtered) {
+                String s = null;
+                try {
+                    s = t.getString();
+                } catch (Exception ignored) {
+                }
+                if (s == null || s.trim().isEmpty())
+                    continue;
+                compact.add(t);
+                if (compact.size() >= 3)
+                    break;
+            }
+            if (!compact.isEmpty())
+                lines = compact;
+            else
+                lines = filtered;
+        }
+
         if (lines.isEmpty()) {
             hoveredLastFrame = false;
             return false;
@@ -144,7 +201,6 @@ public final class TooltipRenderer {
         final boolean isTool = stack.getItem() instanceof ToolItem;
         final boolean isMap = stack.getItem() instanceof FilledMapItem;
         final boolean isPainting = Registries.ITEM.getId(stack.getItem()).getPath().equals("painting");
-        final boolean isTrim = isTrimItem(stack);
 
         if (isPainting) {
             System.out.println("Detected painting item: " + Registries.ITEM.getId(stack.getItem())); // Debug log
@@ -159,14 +215,18 @@ public final class TooltipRenderer {
                 (isTool && config.rendering.enableToolPreviews) ||
                 (isMap && config.rendering.enableMapPreviews) ||
                 (isPainting && config.rendering.enablePaintingPreviews) ||
-                // Reuse armor preview toggle for trim previews (separate side panel)
-                (isTrim && config.rendering.enableArmorPreview);
+                (isTrimTemplate(stack) && config.rendering.enableArmorPreview);
 
         int rarityWidth = (isArmor || !config.rendering.showRarityText) ? 0 : font.getWidth(getRarityName(stack));
         TooltipSize content = renderSource.measure(font, L, isArmor, rarityWidth);
 
         int tooltipWidth = content.widthWithPadding(L);
         int tooltipHeight = content.heightWithPadding(L);
+        // If this is a trim template, grow the default tooltip to fit an inline
+        // materials grid
+        if (isTrimTemplate(stack)) {
+            tooltipHeight += computeTrimMaterialsFooterHeight(tooltipWidth, L);
+        }
 
         int screenW = ctx.getScaledWindowWidth(); // 1.20.1 [1]
         int screenH = ctx.getScaledWindowHeight(); // 1.20.1 [1]
@@ -183,14 +243,15 @@ public final class TooltipRenderer {
                     .computePanelSize(stack, tooltipSeconds);
             panelWidth = Math.max(panelWidth, ps.x);
         }
-        if (isTrim) {
-            panelWidth = Math.max(panelWidth, 32);
-        }
 
         // Get placement info including whether tooltip is on left side
         TooltipPlacement.PlacementResult placement = TooltipPlacement.placeWithSideInfo(mouseX, mouseY,
                 tooltipWidth, tooltipHeight, screenW, screenH, hasSidePanel, panelWidth, 3);
         Point pos = placement.position;
+        // Adjust Y position only for trim templates to align flush with trim render
+        if (isTrimTemplate(stack)) {
+            pos.y -= 2; // Move up by 2 pixels; adjust this value as needed for perfect alignment
+        }
         boolean isTooltipOnLeft = placement.isTooltipOnLeft;
 
         Vec2f posVec = new Vec2f(pos.x, pos.y);
@@ -230,6 +291,11 @@ public final class TooltipRenderer {
         renderSource.renderText(ctx, font, pos.x + L.paddingX, pos.y + L.paddingTop, L);
         ms.pop();
 
+        // Render inline trim materials inside the tooltip (before front layers)
+        if (isTrimTemplate(stack)) {
+            renderTrimMaterials(ctx, posVec, size, L, content.contentHeight);
+        }
+
         TooltipStylePipeline.renderFrontLayers(etx, posVec, size);
 
         if (hasSidePanel) {
@@ -255,8 +321,8 @@ public final class TooltipRenderer {
                 Vec2f center = PaintingSidePanel.renderPaintingPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
                         screenH, isTooltipOnLeft);
                 PaintingSidePanel.renderPaintingPreview(etx, ctx, stack, center);
-            } else if (isTrim) {
-                // For armor trims, show a full netherite set with trim applied
+            } else if (isTrimTemplate(stack)) {
+                // 3D render for trim template
                 Vec2f center = TrimSidePanel.renderTrimPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
                         screenH, isTooltipOnLeft);
                 TrimSidePanel.renderTrimPreview(ctx, stack, center);
@@ -403,6 +469,116 @@ public final class TooltipRenderer {
         } catch (Exception ignored) {
         }
         return 0xFF7A7A7A;
+    }
+
+    // ==== Inline trim materials helpers ====
+    private static int computeTrimMaterialsFooterHeight(int tooltipWidth, TooltipLayout L) {
+        try {
+            int innerW = Math.max(1, tooltipWidth - L.paddingX * 2);
+            // Layout constants
+            final int chipW = 10, chipH = 9;
+            final int gapX = 1, gapY = 1;
+            final int padTop = 1;
+            int count = getTrimMaterialsCount();
+            if (count <= 0)
+                return 0;
+            int maxCols = Math.max(1, (innerW + gapX) / (chipW + gapX));
+            int cols = Math.max(1, Math.min(count, maxCols));
+            int rows = Math.max(1, (int) Math.ceil(count / (double) cols));
+            int innerH = rows * chipH + (rows - 1) * gapY;
+            return padTop + innerH; // bottom flush with L.paddingBottom
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    private static void renderTrimMaterials(DrawContext ctx, Vec2f tooltipPos, Point tooltipSize, TooltipLayout L,
+            int contentHeight) {
+        try {
+            int innerW = Math.max(1, tooltipSize.x - L.paddingX * 2);
+            final int chipW = 10, chipH = 10;
+            final int gapX = 1, gapY = 1;
+            final int padTop = 2;
+            int count = getTrimMaterialsCount();
+            if (count <= 0)
+                return;
+
+            int maxCols = Math.max(1, (innerW + gapX) / (chipW + gapX));
+            int cols = Math.max(1, Math.min(count, maxCols));
+            // Position directly beneath the rendered text area: paddingTop + contentHeight
+            // + titleExtra
+            int boxX = (int) (tooltipPos.x + L.paddingX);
+            int boxY = (int) (tooltipPos.y + L.paddingTop + contentHeight + L.titleExtra);
+
+            final int nudgeUp = 2;
+
+            // Draw the chips
+            // Use the same material order as TrimSidePanel
+            var materials = TrimSidePanel.getMaterialEntriesForUI();
+            int selected = TrimSidePanel.getSelectedMaterialIndexForUI();
+            // compute total rows to set hover area
+            int rows = (materials.size() + cols - 1) / cols;
+            int areaW = cols * chipW + (cols - 1) * gapX;
+            int areaH = rows * chipH + (rows - 1) * gapY + padTop;
+            TrimSidePanel.setInlineMaterialsArea(boxX, boxY, areaW, areaH);
+            TrimSidePanel.markInlineMaterialsActive();
+            for (int i = 0; i < materials.size(); i++) {
+                var mat = materials.get(i);
+                var item = mat.value().ingredient().value();
+                int r = i / cols;
+                int c = i % cols;
+                int cx = boxX + c * (chipW + gapX);
+                int cy = boxY + (padTop - nudgeUp) + r * (chipH + gapY);
+                if (i == selected) {
+                    ctx.fill(cx, cy, cx + chipW, cy + chipH, 0xA0FFFFFF);
+                }
+                ctx.drawBorder(cx - 1, cy - 1, chipW + 2, chipH + 2, 0xFF3C3C3C);
+                float s = chipW / 16.0f;
+                var ms = ctx.getMatrices();
+                ms.push();
+                ms.translate(cx + 1, cy + 1, 400.0f);
+                ms.scale(s, s, 1.0f);
+                // Draw a slot-style background behind the selected chip, inside the same
+                // transform
+                if (i == selected) {
+                    int slotColor = 0x20FFFFFF; // match vanilla slot color
+                    // Larger slot highlight: fills more area, still avoids overlap
+                    // Top bar (wider, 2px high)
+                    ctx.fill(1, 1, 15, 2, slotColor);
+                    // Body (fills almost all, leaves 1px border)
+                    ctx.fill(0, 2, 16, 15, slotColor);
+                    // Bottom bar (wider, 1px high)
+                    ctx.fill(1, 15, 15, 16, slotColor);
+                }
+                ctx.drawItem(new ItemStack(item), 0, 0);
+                ms.pop();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static int getTrimMaterialsCount() {
+        try {
+            var mc = MinecraftClient.getInstance();
+            if (mc.world == null)
+                return 0;
+            var reg = mc.world.getRegistryManager().get(net.minecraft.registry.RegistryKeys.TRIM_MATERIAL);
+            return reg == null ? 0 : reg.getIds().size();
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    // Helper to restrict behavior to smithing templates only
+    private static boolean isTrimTemplate(ItemStack stack) {
+        try {
+            if (stack.getItem() instanceof SmithingTemplateItem) {
+                var id = Registries.ITEM.getId(stack.getItem());
+                return id != null && id.getPath().endsWith("_armor_trim_smithing_template");
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
 }

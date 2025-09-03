@@ -39,10 +39,10 @@ public final class TrimSidePanel {
     // Panel bookkeeping for input/render
     private static Vec2f lastPanelPos;
     private static Point lastPanelSize;
+    // Inline materials are now drawn within the main tooltip; these are no longer
+    // used
     private static Vec2f lastMaterialsPos;
     private static Point lastMaterialsSize;
-    private static int lastMouseX;
-    private static int lastMouseY;
     private static String lastHoverKey = "";
     private static List<RegistryEntry<ArmorTrimMaterial>> materialEntries = new ArrayList<>();
     private static int selectedMaterialIndex = -1;
@@ -50,6 +50,19 @@ public final class TrimSidePanel {
     private static final long ACTIVE_TIMEOUT_MS = 750L; // consider hover active if rendered recently
 
     private TrimSidePanel() {
+    }
+
+    // Called when inline materials are rendered to mark hover as active (enables
+    // scrolling)
+    public static void markInlineMaterialsActive() {
+        lastActiveMs = System.currentTimeMillis();
+    }
+
+    // Called from tooltip renderer to provide the on-screen area occupied by inline
+    // materials
+    public static void setInlineMaterialsArea(int x, int y, int w, int h) {
+        lastMaterialsPos = new Vec2f(x, y);
+        lastMaterialsSize = new Point(w, h);
     }
 
     public static Vec2f renderTrimPanel(TooltipContext ec, Vec2f tooltipPos, Point tooltipSize,
@@ -71,8 +84,7 @@ public final class TrimSidePanel {
         Vec2f panelPos = new Vec2f(panelX, panelY);
         lastPanelPos = panelPos;
         lastPanelSize = panelSize;
-        lastMouseX = mouseX;
-        lastMouseY = mouseY;
+        // mouse tracking no longer needed for inline materials
         ec.drawManaged(() -> {
             if (TooltipStylePipeline.renderStyleRef != null)
                 TooltipStylePipeline.renderStyleRef.renderBack(ec, panelPos, panelSize, false);
@@ -90,7 +102,7 @@ public final class TrimSidePanel {
             return;
         ItemSidePanel.renderStandRef = cachedStand;
         ItemSidePanel.renderStand(ctx, (int) center.x, (int) (center.y + 26));
-        renderMaterialsTooltip(ctx);
+        // Inline materials are now rendered in the main tooltip, so no extra panel here
     }
 
     /**
@@ -197,6 +209,29 @@ public final class TrimSidePanel {
                 var e = reg.getEntry(RegistryKey.of(RegistryKeys.TRIM_MATERIAL, id));
                 e.ifPresent(materialEntries::add);
             }
+            // Sort entries to a stable, user-friendly order with diamond first
+            java.util.Map<String, Integer> order = new java.util.HashMap<>();
+            String[] pref = new String[] {
+                    "minecraft:diamond", "minecraft:gold_ingot", "minecraft:amethyst_shard",
+                    "minecraft:lapis_lazuli", "minecraft:iron_ingot", "minecraft:netherite_ingot",
+                    "minecraft:redstone", "minecraft:emerald", "minecraft:copper_ingot", "minecraft:quartz"
+            };
+            for (int i = 0; i < pref.length; i++)
+                order.put(pref[i], i);
+            materialEntries.sort((a, b) -> {
+                var drm2 = MinecraftClient.getInstance().world.getRegistryManager();
+                var reg2 = drm2.get(RegistryKeys.TRIM_MATERIAL);
+                Identifier ida = reg2 != null ? reg2.getId(a.value()) : null;
+                Identifier idb = reg2 != null ? reg2.getId(b.value()) : null;
+                int ra = ida != null ? order.getOrDefault(ida.toString(), 1000) : 1000;
+                int rb = idb != null ? order.getOrDefault(idb.toString(), 1000) : 1000;
+                if (ra != rb)
+                    return Integer.compare(ra, rb);
+                // fallback stable by identifier
+                String sa = ida == null ? "" : ida.toString();
+                String sb = idb == null ? "" : idb.toString();
+                return sa.compareTo(sb);
+            });
         }
     }
 
@@ -208,86 +243,8 @@ public final class TrimSidePanel {
         return Optional.of(materialEntries.get(selectedMaterialIndex));
     }
 
-    private static void renderMaterialsTooltip(DrawContext ctx) {
-        try {
-            if (lastPanelPos == null || lastPanelSize == null)
-                return;
-            if (materialEntries == null || materialEntries.isEmpty())
-                return;
-
-            // Layout
-            final int chipW = 18, chipH = 18;
-            final int pad = 6;
-            final int gapX = 2, gapY = 2;
-            final int maxCols = 7;
-
-            int count = materialEntries.size();
-            int cols = Math.min(maxCols, Math.max(1, count));
-            int rows = (int) Math.ceil(count / (double) cols);
-
-            int innerW = cols * chipW + (cols - 1) * gapX;
-            int innerH = rows * chipH + (rows - 1) * gapY;
-            int boxW = innerW + pad * 2;
-            int boxH = innerH + pad * 2;
-
-            // Place below the stand panel, horizontally centered
-            int screenW = ctx.getScaledWindowWidth();
-            int screenH = ctx.getScaledWindowHeight();
-            int boxX = (int) (lastPanelPos.x + (lastPanelSize.x - boxW) / 2);
-            int boxY = (int) (lastPanelPos.y + lastPanelSize.y + 4);
-
-            // Clamp to visible area
-            if (boxX < 4)
-                boxX = 4;
-            if (boxX + boxW > screenW - 4)
-                boxX = Math.max(4, screenW - 4 - boxW);
-            if (boxY + boxH > screenH - 4)
-                boxY = Math.max(4, screenH - 4 - boxH);
-
-            lastMaterialsPos = new Vec2f(boxX, boxY);
-            lastMaterialsSize = new Point(boxW, boxH);
-
-            // Background and border
-            ctx.fill(boxX, boxY, boxX + boxW, boxY + boxH, 0xAA1C1C1C);
-            ctx.drawBorder(boxX, boxY, boxW, boxH, 0xFF3C3C3C);
-
-            // Chips
-            int i = 0;
-            for (var entry : materialEntries) {
-                int r = i / cols;
-                int c = i % cols;
-                int cx = boxX + pad + c * (chipW + gapX);
-                int cy = boxY + pad + r * (chipH + gapY);
-
-                var mat = entry.value();
-                var itemEntry = mat.ingredient();
-                var item = itemEntry.value();
-                ItemStack stack = new ItemStack(item);
-
-                boolean selected = getSelectedMaterial().map(e -> e.value() == entry.value()).orElse(false);
-                int bg = selected ? 0xCC2A2A2A : 0x88222222;
-                int border = selected ? 0xFF00FFA8 : 0xFF444444;
-                ctx.fill(cx - 1, cy - 1, cx + chipW + 1, cy + chipH + 1, bg);
-                ctx.drawBorder(cx - 1, cy - 1, chipW + 2, chipH + 2, border);
-                ctx.drawItem(stack, cx + 1, cy + 1);
-
-                // Hover label above the box
-                if (lastMouseX >= cx && lastMouseX <= cx + chipW && lastMouseY >= cy && lastMouseY <= cy + chipH) {
-                    String label = mat.description().getString();
-                    var tr = MinecraftClient.getInstance().textRenderer;
-                    int w = tr.getWidth(label) + 6;
-                    int h = tr.fontHeight + 4;
-                    int tx = Math.max(4, Math.min(cx - (w - chipW) / 2, screenW - 4 - w));
-                    int ty = Math.max(4, boxY - h - 3);
-                    ctx.fill(tx, ty, tx + w, ty + h, 0xCC111111);
-                    ctx.drawBorder(tx, ty, w, h, 0xFF3C3C3C);
-                    ctx.drawText(tr, label, tx + 3, ty + 2, 0xFFDADADA, false);
-                }
-                i++;
-            }
-        } catch (Exception ignored) {
-        }
-    }
+    // removed obsolete renderMaterialsTooltip; inline materials are rendered in the
+    // main tooltip
 
     private static void syncSelectionWithHover(ItemStack hovered) {
         try {
@@ -331,8 +288,7 @@ public final class TrimSidePanel {
 
     public static void onScroll(double mouseX, double mouseY, double vScroll) {
         try {
-            lastMouseX = (int) mouseX;
-            lastMouseY = (int) mouseY;
+            // mouse tracking no longer needed for inline materials
             boolean activeHover = (System.currentTimeMillis() - lastActiveMs) <= ACTIVE_TIMEOUT_MS;
             boolean within = false;
             if (!activeHover) {
@@ -398,5 +354,28 @@ public final class TrimSidePanel {
             }
         }
         throw new IllegalStateException("Trim material registry unavailable");
+    }
+
+    // UI hook: expose currently selected material index for tooltip highlight
+    public static int getSelectedMaterialIndexForUI() {
+        try {
+            ensureMaterials();
+            if (materialEntries == null || materialEntries.isEmpty())
+                return -1;
+            if (selectedMaterialIndex < 0)
+                return 0;
+            if (selectedMaterialIndex >= materialEntries.size())
+                return materialEntries.size() - 1;
+            return selectedMaterialIndex;
+        } catch (Exception ignored) {
+            return -1;
+        }
+    }
+
+    // Expose material entries for tooltip chip rendering (order must match
+    // selection index)
+    public static List<RegistryEntry<ArmorTrimMaterial>> getMaterialEntriesForUI() {
+        ensureMaterials();
+        return materialEntries == null ? java.util.Collections.emptyList() : materialEntries;
     }
 }
