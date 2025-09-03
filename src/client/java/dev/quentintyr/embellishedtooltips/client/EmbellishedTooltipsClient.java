@@ -35,6 +35,8 @@ public class EmbellishedTooltipsClient implements ClientModInitializer {
             LOGGER.info("Client commands registered");
         });
 
+        // Mouse scroll handled via mixin MouseScrollMixin
+
         LOGGER.info("Embellished Tooltips client initialized successfully");
     }
 }
