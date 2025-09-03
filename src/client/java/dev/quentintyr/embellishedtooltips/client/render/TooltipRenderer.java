@@ -6,6 +6,7 @@ import dev.quentintyr.embellishedtooltips.client.config.ModConfig;
 import dev.quentintyr.embellishedtooltips.client.render.item.ItemSidePanel;
 import dev.quentintyr.embellishedtooltips.client.render.map.MapSidePanel;
 import dev.quentintyr.embellishedtooltips.client.render.painting.PaintingSidePanel;
+import dev.quentintyr.embellishedtooltips.client.render.trim.TrimSidePanel;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStyle;
 import dev.quentintyr.embellishedtooltips.client.style.TooltipStylePreset;
 
@@ -23,6 +24,7 @@ import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.SmithingTemplateItem;
 import net.minecraft.item.ToolItem;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
@@ -142,6 +144,7 @@ public final class TooltipRenderer {
         final boolean isTool = stack.getItem() instanceof ToolItem;
         final boolean isMap = stack.getItem() instanceof FilledMapItem;
         final boolean isPainting = Registries.ITEM.getId(stack.getItem()).getPath().equals("painting");
+        final boolean isTrim = isTrimItem(stack);
 
         if (isPainting) {
             System.out.println("Detected painting item: " + Registries.ITEM.getId(stack.getItem())); // Debug log
@@ -155,7 +158,9 @@ public final class TooltipRenderer {
         final boolean hasSidePanel = (isArmor && config.rendering.enableArmorPreview) ||
                 (isTool && config.rendering.enableToolPreviews) ||
                 (isMap && config.rendering.enableMapPreviews) ||
-                (isPainting && config.rendering.enablePaintingPreviews);
+                (isPainting && config.rendering.enablePaintingPreviews) ||
+                // Reuse armor preview toggle for trim previews (separate side panel)
+                (isTrim && config.rendering.enableArmorPreview);
 
         int rarityWidth = (isArmor || !config.rendering.showRarityText) ? 0 : font.getWidth(getRarityName(stack));
         TooltipSize content = renderSource.measure(font, L, isArmor, rarityWidth);
@@ -177,6 +182,9 @@ public final class TooltipRenderer {
             java.awt.Point ps = dev.quentintyr.embellishedtooltips.client.render.painting.PaintingRenderer
                     .computePanelSize(stack, tooltipSeconds);
             panelWidth = Math.max(panelWidth, ps.x);
+        }
+        if (isTrim) {
+            panelWidth = Math.max(panelWidth, 32);
         }
 
         // Get placement info including whether tooltip is on left side
@@ -247,6 +255,11 @@ public final class TooltipRenderer {
                 Vec2f center = PaintingSidePanel.renderPaintingPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
                         screenH, isTooltipOnLeft);
                 PaintingSidePanel.renderPaintingPreview(etx, ctx, stack, center);
+            } else if (isTrim) {
+                // For armor trims, show a full netherite set with trim applied
+                Vec2f center = TrimSidePanel.renderTrimPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
+                        screenH, isTooltipOnLeft);
+                TrimSidePanel.renderTrimPreview(ctx, stack, center);
             }
         }
 
@@ -330,6 +343,44 @@ public final class TooltipRenderer {
         if (stack.getItem() instanceof ArmorItem armorItem) {
             renderStand.equipStack(armorItem.getSlotType(), stack);
         }
+    }
+
+    private static boolean isStackTrimMaterial(ItemStack stack) {
+        try {
+            var mc = MinecraftClient.getInstance();
+            if (mc.world == null)
+                return false;
+            var reg = mc.world.getRegistryManager().get(net.minecraft.registry.RegistryKeys.TRIM_MATERIAL);
+            if (reg == null)
+                return false;
+            var item = stack.getItem();
+            for (net.minecraft.util.Identifier id : reg.getIds()) {
+                var mat = reg.get(id);
+                if (mat == null)
+                    continue;
+                try {
+                    if (mat.ingredient().value() == item)
+                        return true;
+                } catch (Exception ignored) {
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private static boolean isTrimItem(ItemStack stack) {
+        // Smithing template items for armor trims or items that are valid trim
+        // materials
+        try {
+            if (stack.getItem() instanceof SmithingTemplateItem) {
+                var id = Registries.ITEM.getId(stack.getItem());
+                if (id != null && id.getPath().endsWith("_armor_trim_smithing_template"))
+                    return true;
+            }
+        } catch (Exception ignored) {
+        }
+        return isStackTrimMaterial(stack);
     }
 
     static Text getRarityName(ItemStack stack) {

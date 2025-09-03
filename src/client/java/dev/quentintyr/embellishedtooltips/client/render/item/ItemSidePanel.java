@@ -36,8 +36,9 @@ public final class ItemSidePanel {
         // Ensure panel stays within screen bounds
         panelX = Math.max(4, Math.min(panelX, screenW - panelSize.x - 4));
 
-        panelY = mouseY - 12; // Match tooltip Y positioning (standard offset)
-        panelY = Math.max(4, Math.min(panelY, screenH - panelSize.y - 4));
+    // Align the top of the side panel with the top of the main tooltip
+    panelY = tooltipPos.y;
+    panelY = Math.max(4, Math.min(panelY, screenH - panelSize.y - 4));
 
         Vec2f panelPos = new Vec2f(panelX, panelY);
         ec.drawManaged(() -> {
@@ -66,8 +67,9 @@ public final class ItemSidePanel {
         // Ensure panel stays within screen bounds
         panelX = Math.max(4, Math.min(panelX, screenW - panelSize.x - 4));
 
-        panelY = mouseY - 12; // Match tooltip Y positioning (standard offset)
-        panelY = Math.max(4, Math.min(panelY, screenH - panelSize.y - 4));
+    // Align the top of the side panel with the top of the main tooltip
+    panelY = tooltipPos.y;
+    panelY = Math.max(4, Math.min(panelY, screenH - panelSize.y - 4));
 
         Vec2f panelPos = new Vec2f(panelX, panelY);
         ec.drawManaged(() -> {
