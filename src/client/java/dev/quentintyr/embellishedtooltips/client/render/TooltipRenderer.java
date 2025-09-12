@@ -57,6 +57,10 @@ public final class TooltipRenderer {
     public static boolean render(DrawContext ctx, ItemStack stack, TextRenderer font,
             List<TooltipComponent> components, int mouseX, int mouseY,
             TooltipPositioner positioner) {
+        // Only render for valid item stacks
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
 
         // Check if custom tooltips are enabled
         ModConfig config = ModConfig.getInstance();

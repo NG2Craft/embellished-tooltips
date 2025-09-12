@@ -27,20 +27,24 @@ public abstract class GuiGraphicsMixin {
 
         // Since we don't have access to the ItemStack in this method, we'll use EMPTY
         // as fallback
-        // The HandledScreenMixin should catch item tooltips with proper ItemStack
-        // access
+        // Only attempt to render if this is likely an item tooltip (HandledScreenMixin
+        // handles real items)
+        // Prevent icons on non-item tooltips
         ItemStack fallbackStack = ItemStack.EMPTY;
-
-        // Try to render with our custom system
         if (components != null && !components.isEmpty()) {
-            try {
-                if (TooltipRenderer.render((DrawContext) (Object) this, fallbackStack, textRenderer,
-                        components, x, y, positioner)) {
-                    ci.cancel();
+            // Only call our renderer if the first component is an item tooltip (heuristic)
+            TooltipComponent first = components.get(0);
+            String className = first.getClass().getSimpleName().toLowerCase();
+            if (className.contains("item") || className.contains("stack")) {
+                try {
+                    if (TooltipRenderer.render((DrawContext) (Object) this, fallbackStack, textRenderer,
+                            components, x, y, positioner)) {
+                        ci.cancel();
+                    }
+                } catch (Exception e) {
+                    // If there's any error, fall back to vanilla rendering
+                    System.err.println("Error in custom tooltip rendering: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                // If there's any error, fall back to vanilla rendering
-                System.err.println("Error in custom tooltip rendering: " + e.getMessage());
             }
         }
     }
