@@ -1,24 +1,17 @@
 package dev.quentintyr.embellishedtooltips;
 
 import net.fabricmc.api.ModInitializer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class Embellishedtooltips implements ModInitializer {
-	public static final String MOD_ID = "embellished-tooltips";
-
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+public class EmbellishedTooltips implements ModInitializer {
+	// Must match the "id" in fabric.mod.json and asset namespaces
+	public static final String MODID = "embellished_tooltips";
+	public static final Logger LOGGER = LogManager.getLogger("EmbellishedTooltips");
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
-
-		LOGGER.info("Hello Fabric world!");
+		LOGGER.info("Initializing Embellished Tooltips (common)");
+		// Common setup (if needed). Most functionality is client-side.
 	}
 }
