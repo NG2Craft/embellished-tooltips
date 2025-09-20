@@ -2,6 +2,7 @@ package dev.quentintyr.embellishedtooltips.client;
 
 import dev.quentintyr.embellishedtooltips.client.config.ConfigCommand;
 import dev.quentintyr.embellishedtooltips.client.config.ModConfig;
+// 2D framed tooltip pipeline removed (3D preview handled directly in TooltipRenderer)
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -39,4 +40,6 @@ public class EmbellishedTooltipsClient implements ClientModInitializer {
 
         LOGGER.info("Embellished Tooltips client initialized successfully");
     }
+
+    // (Framed 2D preview logic removed)
 }

@@ -24,6 +24,7 @@ import net.minecraft.item.ArmorItem;
 import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.SmithingTemplateItem;
+import net.minecraft.item.Items;
 import dev.quentintyr.embellishedtooltips.client.render.trim.TrimSidePanel;
 import net.minecraft.item.ToolItem;
 import net.minecraft.text.OrderedText;
@@ -38,8 +39,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+
+import dev.quentintyr.embellishedtooltips.client.render.itemframe.ItemFrameSidePanel;
 
 @Environment(EnvType.CLIENT)
 public final class TooltipRenderer {
@@ -53,6 +58,50 @@ public final class TooltipRenderer {
     private static float tooltipSeconds;
     private static boolean hoveredLastFrame;
     private static long lastRenderMillis;
+    // Random preview support for item frame hover
+    private static ItemStack randomPreviewStack = ItemStack.EMPTY;
+    private static long lastRandomGenTime = 0L;
+    private static List<net.minecraft.item.Item> randomPool;
+    private static final long RANDOM_REFRESH_INTERVAL_MS = 2500L; // rotate every 2.5s while hovered
+    private static final int RANDOM_POOL_MIN = 64; // ensure pool has enough variety
+
+    private static boolean isItemFrame(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && stack.isOf(Items.ITEM_FRAME);
+    }
+
+    private static ItemStack getRandomPreviewStack(ItemStack frameStack) {
+        long now = System.currentTimeMillis();
+        if (randomPool == null) {
+            // Build a pool of candidate items (exclude AIR & ITEM_FRAME)
+            List<net.minecraft.item.Item> list = new ArrayList<>();
+            for (net.minecraft.item.Item item : Registries.ITEM) {
+                if (item != Items.AIR && item != Items.ITEM_FRAME) {
+                    list.add(item);
+                }
+            }
+            if (list.size() < RANDOM_POOL_MIN) {
+                randomPool = list; // small modpack fallback
+            } else {
+                // Shuffle once and keep
+                Collections.shuffle(list, new Random(now));
+                randomPool = list;
+            }
+        }
+        boolean needNew = randomPreviewStack.isEmpty() || !lastStackIsFrame(frameStack)
+                || (now - lastRandomGenTime) > RANDOM_REFRESH_INTERVAL_MS;
+        if (needNew) {
+            Random r = new Random(now);
+            net.minecraft.item.Item base = randomPool.get(r.nextInt(randomPool.size()));
+            randomPreviewStack = new ItemStack(base);
+            lastRandomGenTime = now;
+        }
+        return randomPreviewStack;
+    }
+
+    private static boolean lastStackIsFrame(ItemStack current) {
+        return lastStack != null && !lastStack.isEmpty() && lastStack.isOf(Items.ITEM_FRAME)
+                && current.isOf(Items.ITEM_FRAME);
+    }
 
     public static boolean render(DrawContext ctx, ItemStack stack, TextRenderer font,
             List<TooltipComponent> components, int mouseX, int mouseY,
@@ -85,6 +134,8 @@ public final class TooltipRenderer {
         } else {
             compsToRender = components;
         }
+
+        // Item frame preview will move to a side panel; no inline injection anymore
 
         return renderCore(ctx, stack, font, new ComponentsSource(compsToRender), mouseX, mouseY);
     }
@@ -191,6 +242,8 @@ public final class TooltipRenderer {
             compsToRender = comps;
         }
 
+        // Item frame preview will move to a side panel; no inline component here
+
         return renderCore(ctx, stack, font, new ComponentsSource(compsToRender), mouseX, mouseY);
     }
 
@@ -205,6 +258,7 @@ public final class TooltipRenderer {
         final boolean isTool = stack.getItem() instanceof ToolItem;
         final boolean isMap = stack.getItem() instanceof FilledMapItem;
         final boolean isPainting = Registries.ITEM.getId(stack.getItem()).getPath().equals("painting");
+        final boolean isItemFrameItem = isItemFrame(stack);
 
         if (isPainting) {
             System.out.println("Detected painting item: " + Registries.ITEM.getId(stack.getItem())); // Debug log
@@ -219,6 +273,7 @@ public final class TooltipRenderer {
                 (isTool && config.rendering.enableToolPreviews) ||
                 (isMap && config.rendering.enableMapPreviews) ||
                 (isPainting && config.rendering.enablePaintingPreviews) ||
+                (isItemFrameItem) ||
                 (isTrimTemplate(stack) && config.rendering.enableArmorPreview);
 
         int rarityWidth = (isArmor || !config.rendering.showRarityText) ? 0 : font.getWidth(getRarityName(stack));
@@ -226,26 +281,26 @@ public final class TooltipRenderer {
 
         int tooltipWidth = content.widthWithPadding(L);
         int tooltipHeight = content.heightWithPadding(L);
-        // If this is a trim template, grow the default tooltip to fit an inline
-        // materials grid
+        // Grow tooltip to fit inline trim materials grid
         if (isTrimTemplate(stack)) {
             tooltipHeight += computeTrimMaterialsFooterHeight(tooltipWidth, L);
         }
 
-        int screenW = ctx.getScaledWindowWidth(); // 1.20.1 [1]
-        int screenH = ctx.getScaledWindowHeight(); // 1.20.1 [1]
+        int screenW = ctx.getScaledWindowWidth();
+        int screenH = ctx.getScaledWindowHeight();
 
-        // Determine panel width based on item type
-        int panelWidth = 32; // Default for tools/armor
+        // Determine panel width based on item type (reconstructed after refactor)
+        int panelWidth = 32;
         if (isMap) {
-            panelWidth = 64; // Maps use 64x64 square panels
+            panelWidth = 64;
         }
         if (isPainting) {
-            // Paintings can vary; compute size (hover-aware) for placement to avoid
-            // collisions
             java.awt.Point ps = dev.quentintyr.embellishedtooltips.client.render.painting.PaintingRenderer
                     .computePanelSize(stack, tooltipSeconds);
             panelWidth = Math.max(panelWidth, ps.x);
+        }
+        if (isItemFrameItem) {
+            panelWidth = Math.max(panelWidth, 48);
         }
 
         // Get placement info including whether tooltip is on left side
@@ -326,10 +381,17 @@ public final class TooltipRenderer {
                         screenH, isTooltipOnLeft);
                 PaintingSidePanel.renderPaintingPreview(etx, ctx, stack, center);
             } else if (isTrimTemplate(stack)) {
-                // 3D render for trim template
                 Vec2f center = TrimSidePanel.renderTrimPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
                         screenH, isTooltipOnLeft);
                 TrimSidePanel.renderTrimPreview(ctx, stack, center);
+            } else if (isItemFrameItem) {
+                Vec2f center = ItemFrameSidePanel.renderPanel(etx, posVec, size, null, mouseX, mouseY, screenW,
+                        screenH, isTooltipOnLeft);
+                try {
+                    ItemStack preview = getRandomPreviewStack(stack);
+                    ItemFrameSidePanel.renderPreview(ctx, stack, preview, center);
+                } catch (Throwable ignored) {
+                }
             }
         }
 
